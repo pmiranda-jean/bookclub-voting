@@ -72,7 +72,8 @@ def auto_save():
     save_votes(st.session_state.votes)
 
 # Page navigation
-page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results"])
+#page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results"])
+page = "Submit Books"
 
 # ==================== PAGE 1: Submit Books ====================
 if page == "Submit Books":
