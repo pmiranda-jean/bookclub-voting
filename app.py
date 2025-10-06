@@ -74,16 +74,19 @@ def auto_save():
     save_books(st.session_state.books)
     save_votes(st.session_state.votes)
 
+# Check if current user is admin (Phil)
+is_admin = st.session_state.current_user == "Phil"
 
-
-# Page navigation
-#page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results"])
-page = "Submit Books"
+# Page navigation - only show all pages to Phil
+if is_admin:
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results"])
+else:
+    page = "Submit Books"
+    st.sidebar.info("📌 You are on the Submit Books page")
 
 # ==================== PAGE 1: Submit Books ====================
 if page == "Submit Books":
     user = st.session_state.current_user
-    is_admin = user == "Phil"
 
     st.markdown(f'<p class="main-header">📚 Submit Your Book Choice ({user})</p>', unsafe_allow_html=True)
 
@@ -140,16 +143,9 @@ if page == "Submit Books":
 
                 with col1:
                     st.write(f"**Submitted by:** {book['submitter']}")
-                    #if book.get('image_url'):
-                        #st.image(book['image_url'], width=120)
 
                 with col2:
-                    
-                    #st.write(f"**Pages:** {book.get('pages', 'N/A')}")
-                    #st.write(f"**Genre:** {book.get('genres', 'N/A')}")
-                    #st.markdown(f"[🌐 View on Wikipedia]({book.get('url', '#')})")
-
-                    # Delete logic
+                    # Delete logic - only submitter or Phil can delete
                     if user == book["submitter"] or is_admin:
                         if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
                             st.session_state.books.pop(idx)
@@ -159,8 +155,12 @@ if page == "Submit Books":
         st.info("👋 No books submitted yet. Be the first to add one!")
 
 
-# ==================== PAGE 2: View Books & Vote ====================
+# ==================== PAGE 2: View Books & Vote (Phil Only) ====================
 elif page == "View Books & Vote":
+    if not is_admin:
+        st.error("⛔ Access Denied: This page is only available to Phil.")
+        st.stop()
+    
     st.markdown('<p class="main-header">📖 View Books & Cast Your Vote</p>', unsafe_allow_html=True)
     
     if not st.session_state.books:
@@ -270,8 +270,13 @@ elif page == "View Books & Vote":
                             st.balloons()
                             st.rerun()
 
-# ==================== PAGE 3: Results ====================
+
+# ==================== PAGE 3: Results (Phil Only) ====================
 elif page == "Results":
+    if not is_admin:
+        st.error("⛔ Access Denied: This page is only available to Phil.")
+        st.stop()
+    
     st.markdown('<p class="main-header">🏆 Voting Results</p>', unsafe_allow_html=True)
     
     if not st.session_state.votes:
@@ -359,50 +364,47 @@ with st.sidebar:
     
     st.divider()
     
-    # Export
-    #st.subheader("💾 Export Data")
-    #if st.button("📥 Prepare Export", use_container_width=True):
-    #    export_data = export_all_data(st.session_state.books, st.session_state.votes)
-    #    st.download_button(
-    #        "⬇️ Download JSON",
-    #        data=export_data,
-    #        file_name=f"bookclub_backup.json",
-    #        mime="application/json",
-    #        use_container_width=True
-    #    )
-    
-    st.divider()
-    
-    # Import
-    #st.subheader("📤 Import Data")
-    #uploaded_file = st.file_uploader("Upload backup JSON", type=['json'])
-    #if uploaded_file is not None:
-    #    try:
-    #        content = uploaded_file.read().decode('utf-8')
-    #        books, votes = import_data(content)
-    #        if books is not None:
-    #            if st.button("✅ Confirm Import", use_container_width=True):
-    #                st.session_state.books = books
-    #                st.session_state.votes = votes
-    #                auto_save()
-    #                st.success("Data imported successfully!")
-    #                st.rerun()
-    #        else:
-    #            st.error("Invalid file format")
-    #    except Exception as e:
-    #        st.error(f"Error reading file: {e}")
-    
-    #st.divider()
-    
-    # Reset
-    #st.subheader("⚠️ Reset")
-    #if st.button("🗑️ Clear All Data", use_container_width=True):
-    #    if st.checkbox("I understand this will delete everything"):
-    #        st.session_state.books = []
-    #        st.session_state.votes = []
-    #        auto_save()
-    #        st.success("All data cleared!")
-    #        st.rerun()
+    # Admin tools - only for Phil
+    if is_admin:
+        st.subheader("🔧 Admin Tools")
+        
+        # Export
+        if st.button("📥 Export Data", use_container_width=True):
+            export_data = export_all_data(st.session_state.books, st.session_state.votes)
+            st.download_button(
+                "⬇️ Download JSON",
+                data=export_data,
+                file_name=f"bookclub_backup.json",
+                mime="application/json",
+                use_container_width=True
+            )
+        
+        # Import
+        uploaded_file = st.file_uploader("📤 Import Data", type=['json'])
+        if uploaded_file is not None:
+            try:
+                content = uploaded_file.read().decode('utf-8')
+                books, votes = import_data(content)
+                if books is not None:
+                    if st.button("✅ Confirm Import", use_container_width=True):
+                        st.session_state.books = books
+                        st.session_state.votes = votes
+                        auto_save()
+                        st.success("Data imported successfully!")
+                        st.rerun()
+                else:
+                    st.error("Invalid file format")
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+        
+        # Reset
+        if st.button("🗑️ Clear All Data", use_container_width=True):
+            if st.checkbox("I understand this will delete everything"):
+                st.session_state.books = []
+                st.session_state.votes = []
+                auto_save()
+                st.success("All data cleared!")
+                st.rerun()
     
     st.divider()
     st.caption("Made with ❤️ for book lovers")
