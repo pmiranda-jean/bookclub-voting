@@ -27,7 +27,7 @@ if "current_user" not in st.session_state:
 
 # Simple login flow
 if not st.session_state.current_user:
-    st.title("👋 Welcome to the Book Club App")
+    st.title("👋 Welcome to our Book Club Website")
     st.info("Please select your name to continue:")
     user = st.selectbox("Your Name", USER_LIST, index=None, placeholder="Select your name")
 
@@ -92,7 +92,7 @@ if page == "Submit Books":
 
     # Submission limit logic
     if len(user_books) >= 5:
-        st.warning("⚠️ You have reached the maximum of 5 submissions. Please delete one before adding a new book.")
+        st.warning("⚠️ You have reached the maximum of 5 submissions. Please delete one of your submission before adding a new book.")
         can_submit = False
     else:
         can_submit = True
@@ -139,14 +139,15 @@ if page == "Submit Books":
                 col1, col2 = st.columns([1, 3])
 
                 with col1:
-                    if book.get('image_url'):
-                        st.image(book['image_url'], width=120)
+                    st.write(f"**Submitted by:** {book['submitter']}")
+                    #if book.get('image_url'):
+                        #st.image(book['image_url'], width=120)
 
                 with col2:
-                    st.write(f"**Submitted by:** {book['submitter']}")
-                    st.write(f"**Pages:** {book.get('pages', 'N/A')}")
-                    st.write(f"**Genre:** {book.get('genres', 'N/A')}")
-                    st.markdown(f"[🌐 View on Wikipedia]({book.get('url', '#')})")
+                    
+                    #st.write(f"**Pages:** {book.get('pages', 'N/A')}")
+                    #st.write(f"**Genre:** {book.get('genres', 'N/A')}")
+                    #st.markdown(f"[🌐 View on Wikipedia]({book.get('url', '#')})")
 
                     # Delete logic
                     if user == book["submitter"] or is_admin:
