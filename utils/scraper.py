@@ -1,6 +1,7 @@
 import requests
 import streamlit as st
 from config.settings import REQUEST_TIMEOUT
+import re 
 
 def fetch_book_data_google(book_title, author):
     '''Fetch book information from Google Books API'''
@@ -9,7 +10,8 @@ def fetch_book_data_google(book_title, author):
         base_url = "https://www.googleapis.com/books/v1/volumes"
         
         # Build search query
-        query = f"intitle:{book_title}+inauthor:{author}"
+        #query = f"intitle:{book_title}+inauthor:{author}"
+        query = f"{book_title} {author}"
         params = {
             'q': query,
             'maxResults': 1,
