@@ -12,6 +12,27 @@ from config.settings import (
     APP_TITLE, MAX_VOTES_PER_PERSON, TOTAL_POINTS, TOP_BOOKS_TO_DISPLAY
 )
 
+USER_LIST = ["Gab", "Nonna", "Phil", "Silvia", "Kathy", "Val"]
+
+# Initialize user session
+if "current_user" not in st.session_state:
+    st.session_state.current_user = None
+
+# Simple login flow
+if not st.session_state.current_user:
+    st.title("👋 Welcome to the Book Club App")
+    st.info("Please select your name to continue:")
+    user = st.selectbox("Your Name", USER_LIST)
+    if st.button("Continue"):
+        st.session_state.current_user = user
+        st.rerun()
+else:
+    st.sidebar.success(f"Logged in as: **{st.session_state.current_user}**")
+    if st.sidebar.button("🔄 Switch User"):
+        st.session_state.current_user = None
+        st.rerun()
+
+
 # Page configuration
 st.set_page_config(
     page_title=APP_TITLE,
