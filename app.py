@@ -12,6 +12,13 @@ from config.settings import (
     APP_TITLE, MAX_VOTES_PER_PERSON, TOTAL_POINTS, TOP_BOOKS_TO_DISPLAY
 )
 
+st.set_page_config(
+    page_title=APP_TITLE,
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 USER_LIST = ["Gab", "Nonna", "Phil", "Silvia", "Kathy", "Val"]
 
 # Initialize user session
@@ -31,15 +38,6 @@ else:
     if st.sidebar.button("🔄 Switch User"):
         st.session_state.current_user = None
         st.rerun()
-
-
-# Page configuration
-st.set_page_config(
-    page_title=APP_TITLE,
-    page_icon="📚",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Custom CSS for better styling
 st.markdown("""
@@ -70,6 +68,8 @@ if 'initialized' not in st.session_state:
 def auto_save():
     save_books(st.session_state.books)
     save_votes(st.session_state.votes)
+
+
 
 # Page navigation
 #page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results"])
