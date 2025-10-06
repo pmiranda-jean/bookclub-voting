@@ -1,74 +1,93 @@
 import requests
-from bs4 import BeautifulSoup
 import streamlit as st
-from config.settings import REQUEST_TIMEOUT, USER_AGENT
+from config.settings import REQUEST_TIMEOUT
 
-def scrape_goodreads(book_title, author):
-    '''Scrape book information from Goodreads'''
+def fetch_book_data_google(book_title, author):
+    '''Fetch book information from Google Books API'''
     try:
-        # Search URL
-        search_query = f"{book_title} {author}".replace(' ', '+')
-        search_url = f"https://www.goodreads.com/search?q={search_query}"
+        # Google Books API endpoint
+        base_url = "https://www.googleapis.com/books/v1/volumes"
         
-        headers = {'User-Agent': USER_AGENT}
+        # Build search query
+        query = f"intitle:{book_title}+inauthor:{author}"
+        params = {
+            'q': query,
+            'maxResults': 1,
+            'printType': 'books'
+        }
         
-        response = requests.get(search_url, headers=headers, timeout=REQUEST_TIMEOUT)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        response = requests.get(base_url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
         
-        # Find first book result
-        book_link = soup.find('a', class_='bookTitle')
-        if not book_link:
+        data = response.json()
+        
+        # Check if we got results
+        if 'items' not in data or len(data['items']) == 0:
             return None
         
-        book_url = 'https://www.goodreads.com' + book_link['href']
-        
-        # Get book page
-        book_response = requests.get(book_url, headers=headers, timeout=REQUEST_TIMEOUT)
-        book_soup = BeautifulSoup(book_response.content, 'html.parser')
+        # Get first book result
+        book = data['items'][0]['volumeInfo']
         
         # Extract information
-        book_info = {'url': book_url}
+        book_info = {}
         
-        # Get cover image
-        img_tag = book_soup.find('img', class_='ResponsiveImage')
-        if img_tag and img_tag.get('src'):
-            book_info['image_url'] = img_tag['src']
-        else:
-            book_info['image_url'] = None
+        # Get title and authors (for confirmation)
+        book_info['api_title'] = book.get('title', book_title)
+        book_info['api_authors'] = ', '.join(book.get('authors', [author]))
         
-        # Get pages
-        pages = book_soup.find('p', {'data-testid': 'pagesFormat'})
-        if pages:
-            book_info['pages'] = pages.text.strip().split()[0]
-        else:
-            book_info['pages'] = 'N/A'
+        # Get page count
+        book_info['pages'] = str(book.get('pageCount', 'N/A'))
         
-        # Get genres
-        genre_elements = book_soup.find_all('span', class_='BookPageMetadataSection__genreButton')
-        if genre_elements:
-            book_info['genres'] = ', '.join([g.text.strip() for g in genre_elements[:3]])
+        # Get cover image (prefer high-res)
+        image_links = book.get('imageLinks', {})
+        book_info['image_url'] = (
+            image_links.get('large') or 
+            image_links.get('medium') or 
+            image_links.get('thumbnail') or 
+            image_links.get('smallThumbnail')
+        )
+        
+        # Get categories/genres
+        categories = book.get('categories', [])
+        if categories:
+            book_info['genres'] = ', '.join(categories[:3])
         else:
             book_info['genres'] = 'N/A'
         
-        # Get summary
-        summary = book_soup.find('div', class_='DetailsLayoutRightParagraph')
-        if summary:
-            book_info['summary'] = summary.get_text(strip=True)[:500] + '...'
+        # Get description/summary
+        description = book.get('description', '')
+        if description:
+            # Remove HTML tags if present
+            import re
+            description = re.sub('<[^<]+?>', '', description)
+            book_info['summary'] = description[:500] + ('...' if len(description) > 500 else '')
         else:
             book_info['summary'] = 'No summary available'
         
+        # Get Google Books link
+        book_info['url'] = book.get('infoLink', '')
+        
+        # Get publisher and publish date (bonus info)
+        book_info['publisher'] = book.get('publisher', 'N/A')
+        book_info['published_date'] = book.get('publishedDate', 'N/A')
+        
         return book_info
     
+    except requests.exceptions.RequestException as e:
+        st.warning(f"Could not fetch data from Google Books: {str(e)}")
+        return None
     except Exception as e:
-        st.warning(f"Could not fetch data from Goodreads: {str(e)}")
+        st.warning(f"Error processing book data: {str(e)}")
         return None
 
 def get_default_book_data():
-    '''Return default book data when scraping fails'''
+    '''Return default book data when API fetch fails'''
     return {
         'pages': 'N/A',
         'image_url': None,
         'genres': 'N/A',
         'summary': 'No summary available',
-        'url': None
+        'url': None,
+        'publisher': 'N/A',
+        'published_date': 'N/A'
     }
