@@ -103,14 +103,14 @@ if page == "Submit Books":
             with st.expander(f"📖 {book['title']} by {book['author']}"):
                 col1, col2 = st.columns([1, 3])
                 
-                with col1:
-                    if book.get('image_url'):
-                        st.image(book['image_url'], width=120)
+                #with col1:
+                #    if book.get('image_url'):
+                #        st.image(book['image_url'], width=120)
                 
-                with col2:
+                with col1:
                     st.write(f"**Submitted by:** {book['submitter']}")
-                    st.write(f"**Pages:** {book.get('pages', 'N/A')}")
-                    st.write(f"**Genre:** {book.get('genres', 'N/A')}")
+                    #st.write(f"**Pages:** {book.get('pages', 'N/A')}")
+                    #st.write(f"**Genre:** {book.get('genres', 'N/A')}")
                     
                     # Delete button
                     if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
