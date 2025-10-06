@@ -350,7 +350,7 @@ elif page == "Results":
 # ==================== SIDEBAR: Data Management ====================
 with st.sidebar:
     st.divider()
-    st.header("⚙️ Data Management")
+    st.header("Submissions")
     
     # Stats
     st.metric("📚 Books", len(st.session_state.books))
@@ -359,49 +359,49 @@ with st.sidebar:
     st.divider()
     
     # Export
-    st.subheader("💾 Export Data")
-    if st.button("📥 Prepare Export", use_container_width=True):
-        export_data = export_all_data(st.session_state.books, st.session_state.votes)
-        st.download_button(
-            "⬇️ Download JSON",
-            data=export_data,
-            file_name=f"bookclub_backup.json",
-            mime="application/json",
-            use_container_width=True
-        )
+    #st.subheader("💾 Export Data")
+    #if st.button("📥 Prepare Export", use_container_width=True):
+    #    export_data = export_all_data(st.session_state.books, st.session_state.votes)
+    #    st.download_button(
+    #        "⬇️ Download JSON",
+    #        data=export_data,
+    #        file_name=f"bookclub_backup.json",
+    #        mime="application/json",
+    #        use_container_width=True
+    #    )
     
     st.divider()
     
     # Import
-    st.subheader("📤 Import Data")
-    uploaded_file = st.file_uploader("Upload backup JSON", type=['json'])
-    if uploaded_file is not None:
-        try:
-            content = uploaded_file.read().decode('utf-8')
-            books, votes = import_data(content)
-            if books is not None:
-                if st.button("✅ Confirm Import", use_container_width=True):
-                    st.session_state.books = books
-                    st.session_state.votes = votes
-                    auto_save()
-                    st.success("Data imported successfully!")
-                    st.rerun()
-            else:
-                st.error("Invalid file format")
-        except Exception as e:
-            st.error(f"Error reading file: {e}")
+    #st.subheader("📤 Import Data")
+    #uploaded_file = st.file_uploader("Upload backup JSON", type=['json'])
+    #if uploaded_file is not None:
+    #    try:
+    #        content = uploaded_file.read().decode('utf-8')
+    #        books, votes = import_data(content)
+    #        if books is not None:
+    #            if st.button("✅ Confirm Import", use_container_width=True):
+    #                st.session_state.books = books
+    #                st.session_state.votes = votes
+    #                auto_save()
+    #                st.success("Data imported successfully!")
+    #                st.rerun()
+    #        else:
+    #            st.error("Invalid file format")
+    #    except Exception as e:
+    #        st.error(f"Error reading file: {e}")
     
-    st.divider()
+    #st.divider()
     
     # Reset
-    st.subheader("⚠️ Reset")
-    if st.button("🗑️ Clear All Data", use_container_width=True):
-        if st.checkbox("I understand this will delete everything"):
-            st.session_state.books = []
-            st.session_state.votes = []
-            auto_save()
-            st.success("All data cleared!")
-            st.rerun()
+    #st.subheader("⚠️ Reset")
+    #if st.button("🗑️ Clear All Data", use_container_width=True):
+    #    if st.checkbox("I understand this will delete everything"):
+    #        st.session_state.books = []
+    #        st.session_state.votes = []
+    #        auto_save()
+    #        st.success("All data cleared!")
+    #        st.rerun()
     
     st.divider()
     st.caption("Made with ❤️ for book lovers")
