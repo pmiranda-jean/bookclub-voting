@@ -55,70 +55,81 @@ page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote",
 
 # ==================== PAGE 1: Submit Books ====================
 if page == "Submit Books":
-    st.markdown('<p class="main-header">📚 Submit Your Book Choice</p>', unsafe_allow_html=True)
-    
-    #st.info("💡 **Tip:** Enter the book title and author as accurately as possible for best results from Google Books.")
-    
+    user = st.session_state.current_user
+    is_admin = user == "Phil"
+
+    st.markdown(f'<p class="main-header">📚 Submit Your Book Choice ({user})</p>', unsafe_allow_html=True)
+
+    # Filter user's submissions
+    user_books = [b for b in st.session_state.books if b["submitter"] == user]
+
+    # Submission limit logic
+    if len(user_books) >= 5:
+        st.warning("⚠️ You have reached the maximum of 5 submissions. Please delete one before adding a new book.")
+        can_submit = False
+    else:
+        can_submit = True
+
     with st.form("book_submission"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            submitter_name = st.text_input("Your Name *", placeholder="Enter your name")
             book_title = st.text_input("Book Title *", placeholder="e.g., The Great Gatsby")
-        
         with col2:
             author = st.text_input("Author *", placeholder="e.g., F. Scott Fitzgerald")
-        
+
         submitted = st.form_submit_button("📖 Submit Book", use_container_width=True)
-        
+
         if submitted:
-            if submitter_name and book_title and author:
+            if not can_submit:
+                st.error("❌ Submission limit reached. Delete one of your books first.")
+            elif book_title and author:
                 if book_exists(st.session_state.books, book_title, author):
                     st.warning("⚠️ This book has already been submitted!")
                 else:
-                    with st.spinner("🔍 Fetching book information from Google Books..."):
-                        book_entry = add_book(st.session_state.books, book_title, author, submitter_name)
-    
+                    with st.spinner("🔍 Fetching book information from Wikipedia..."):
+                        book_entry = add_book(st.session_state.books, book_title, author, user)
                         book_data = fetch_book_data_wikipedia(book_title, author)
                         if book_data:
                             book_entry.update(book_data)
-                            st.success(f"✅ '{book_title}' by {author} has been added with details!")
+                            st.success(f"✅ '{book_title}' by {author} has been added!")
                         else:
                             book_entry.update(get_default_book_data())
-                            st.success(f"✅ '{book_title}' by {author} has been added!")
-                            st.info("ℹ️ Google Books data unavailable - you can manually add details later.")
-                        
+                            st.success(f"✅ '{book_title}' by {author} has been added (no extra data).")
                         auto_save()
                         st.rerun()
             else:
                 st.error("❌ Please fill in all required fields (marked with *)")
-    
+
     st.divider()
-    
+
     # Display submitted books
     if st.session_state.books:
-        st.subheader(f"📚 Submitted Books ({len(st.session_state.books)})")
-        
+        st.subheader(f"📚 All Submitted Books ({len(st.session_state.books)})")
+
         for idx, book in enumerate(st.session_state.books):
             with st.expander(f"📖 {book['title']} by {book['author']}"):
                 col1, col2 = st.columns([1, 3])
-                
-                #with col1:
-                #    if book.get('image_url'):
-                #        st.image(book['image_url'], width=120)
-                
+
                 with col1:
+                    if book.get('image_url'):
+                        st.image(book['image_url'], width=120)
+
+                with col2:
                     st.write(f"**Submitted by:** {book['submitter']}")
-                    #st.write(f"**Pages:** {book.get('pages', 'N/A')}")
-                    #st.write(f"**Genre:** {book.get('genres', 'N/A')}")
-                    
-                    # Delete button
-                    if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
-                        st.session_state.books.pop(idx)
-                        auto_save()
-                        st.rerun()
+                    st.write(f"**Pages:** {book.get('pages', 'N/A')}")
+                    st.write(f"**Genre:** {book.get('genres', 'N/A')}")
+                    st.markdown(f"[🌐 View on Wikipedia]({book.get('url', '#')})")
+
+                    # Delete logic
+                    if user == book["submitter"] or is_admin:
+                        if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
+                            st.session_state.books.pop(idx)
+                            auto_save()
+                            st.rerun()
     else:
         st.info("👋 No books submitted yet. Be the first to add one!")
+
 
 # ==================== PAGE 2: View Books & Vote ====================
 elif page == "View Books & Vote":
