@@ -29,10 +29,15 @@ if "current_user" not in st.session_state:
 if not st.session_state.current_user:
     st.title("👋 Welcome to the Book Club App")
     st.info("Please select your name to continue:")
-    user = st.selectbox("Your Name", USER_LIST)
+    user = st.selectbox("Your Name", USER_LIST, index=None, placeholder="Select your name")
+
     if st.button("Continue"):
-        st.session_state.current_user = user
-        st.rerun()
+        if user:
+            st.session_state.current_user = user
+            st.rerun()
+        else:
+            st.warning("⚠️ Please select your name before continuing.")
+    st.stop()  # 🧠 This stops the rest of the app from loading
 else:
     st.sidebar.success(f"Logged in as: **{st.session_state.current_user}**")
     if st.sidebar.button("🔄 Switch User"):
