@@ -1,69 +1,98 @@
 import requests
 import streamlit as st
-import re
 from config.settings import REQUEST_TIMEOUT
-
-import requests
-import streamlit as st
 import re
-from config.settings import REQUEST_TIMEOUT
 
 def fetch_book_data_wikipedia(book_title, author):
-    """Fetch book information from Wikipedia API."""
+    '''Fetch book information from Wikipedia API'''
     try:
-        base_url = "https://en.wikipedia.org/w/api.php"
-        query = f"{book_title} {author}"
-
-        # Step 1: Search for the most relevant page
-        search_params = {
-            "action": "query",
-            "list": "search",
-            "srsearch": query,
-            "format": "json",
-            "srlimit": 1
-        }
-        search_response = requests.get(base_url, params=search_params, timeout=REQUEST_TIMEOUT)
-        search_response.raise_for_status()
-        search_data = search_response.json()
-
-        if not search_data.get("query", {}).get("search"):
+        # Wikipedia API endpoint
+        base_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        
+        # Try searching with book title
+        search_query = f"{book_title}_(novel)"  # Many books have (novel) suffix
+        page_url = base_url + search_query.replace(' ', '_')
+        
+        response = requests.get(page_url, timeout=REQUEST_TIMEOUT)
+        
+        # If not found with (novel), try just the title
+        if response.status_code == 404:
+            search_query = book_title
+            page_url = base_url + search_query.replace(' ', '_')
+            response = requests.get(page_url, timeout=REQUEST_TIMEOUT)
+        
+        # If still not found, try with author name
+        if response.status_code == 404:
+            search_query = f"{book_title}_by_{author}"
+            page_url = base_url + search_query.replace(' ', '_')
+            response = requests.get(page_url, timeout=REQUEST_TIMEOUT)
+        
+        if response.status_code != 200:
             return None
-
-        page_title = search_data["query"]["search"][0]["title"]
-
-        # Step 2: Get page summary + image (this endpoint is simpler and more consistent)
-        summary_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{page_title.replace(' ', '_')}"
-        summary_response = requests.get(summary_url, timeout=REQUEST_TIMEOUT)
-        summary_response.raise_for_status()
-        summary_data = summary_response.json()
-
-        book_info = {
-            "api_title": summary_data.get("title", book_title),
-            "api_authors": author,
-            "summary": summary_data.get("extract", "No summary available"),
-            "image_url": summary_data.get("thumbnail", {}).get("source"),
-            "pages": "N/A",
-            "genres": "N/A",
-            "url": summary_data.get("content_urls", {}).get("desktop", {}).get("page", "")
-        }
-
+        
+        data = response.json()
+        
+        # Extract information
+        book_info = {}
+        
+        # Get cover image
+        if 'thumbnail' in data:
+            book_info['image_url'] = data['thumbnail'].get('source')
+        elif 'originalimage' in data:
+            book_info['image_url'] = data['originalimage'].get('source')
+        else:
+            book_info['image_url'] = None
+        
+        # Get summary/description
+        summary = data.get('extract', '')
+        if summary:
+            book_info['summary'] = summary[:500] + ('...' if len(summary) > 500 else '')
+        else:
+            book_info['summary'] = 'No summary available'
+        
+        # Get Wikipedia URL
+        book_info['url'] = data.get('content_urls', {}).get('desktop', {}).get('page', '')
+        
+        # Try to extract page count from description (often mentioned)
+        pages_match = re.search(r'(\d+)\s*pages', summary, re.IGNORECASE)
+        if pages_match:
+            book_info['pages'] = pages_match.group(1)
+        else:
+            book_info['pages'] = 'N/A'
+        
+        # Try to extract genre from description
+        genre_keywords = ['fiction', 'novel', 'fantasy', 'science fiction', 'mystery', 
+                         'thriller', 'romance', 'horror', 'historical', 'biography',
+                         'non-fiction', 'memoir', 'poetry', 'drama']
+        
+        found_genres = []
+        summary_lower = summary.lower()
+        for genre in genre_keywords:
+            if genre in summary_lower:
+                found_genres.append(genre.title())
+                if len(found_genres) >= 2:
+                    break
+        
+        book_info['genres'] = ', '.join(found_genres) if found_genres else 'N/A'
+        
+        # Additional info
+        book_info['publisher'] = 'N/A'
+        book_info['published_date'] = 'N/A'
+        
         return book_info
-
-    except requests.exceptions.RequestException as e:
-        st.warning(f"Could not fetch data from Wikipedia: {str(e)}")
-        return None
+    
     except Exception as e:
-        st.warning(f"Error processing Wikipedia book data: {str(e)}")
+        st.warning(f"Could not fetch data from Wikipedia: {str(e)}")
         return None
 
 def get_default_book_data():
-    """Return default book data when API fetch fails."""
+    '''Return default book data when API fetch fails'''
     return {
-        "pages": "N/A",
-        "image_url": None,
-        "genres": "N/A",
-        "summary": "No summary available",
-        "url": None,
-        "publisher": "N/A",
-        "published_date": "N/A"
+        'pages': 'N/A',
+        'image_url': None,
+        'genres': 'N/A',
+        'summary': 'No summary available',
+        'url': None,
+        'publisher': 'N/A',
+        'published_date': 'N/A'
     }
