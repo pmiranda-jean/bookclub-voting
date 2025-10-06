@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 
-from utils.scraper import fetch_book_data_google, get_default_book_data
+from utils.scraper import fetch_book_data_wikipedia, get_default_book_data
 from utils.data_manager import (
     load_books, save_books, load_votes, save_votes,
     add_book, book_exists, add_vote, has_voted,
@@ -57,7 +57,7 @@ page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote",
 if page == "Submit Books":
     st.markdown('<p class="main-header">📚 Submit Your Book Choice</p>', unsafe_allow_html=True)
     
-    st.info("💡 **Tip:** Enter the book title and author as accurately as possible for best results from Google Books.")
+    #st.info("💡 **Tip:** Enter the book title and author as accurately as possible for best results from Google Books.")
     
     with st.form("book_submission"):
         col1, col2 = st.columns(2)
@@ -79,7 +79,7 @@ if page == "Submit Books":
                     with st.spinner("🔍 Fetching book information from Google Books..."):
                         book_entry = add_book(st.session_state.books, book_title, author, submitter_name)
     
-                        book_data = fetch_book_data_google(book_title, author)
+                        book_data = fetch_book_data_wikipedia(book_title, author)
                         if book_data:
                             book_entry.update(book_data)
                             st.success(f"✅ '{book_title}' by {author} has been added with details!")
