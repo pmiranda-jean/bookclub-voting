@@ -1,11 +1,69 @@
 import json
 import os
 from datetime import datetime
+import streamlit as st
 
 def ensure_data_directory():
     '''Create data directory if it doesn't exist'''
     if not os.path.exists('data'):
         os.makedirs('data')
+
+def commit_to_github(file_path, commit_message):
+    '''Commit and push a file to GitHub using GitHub API'''
+    try:
+        # Get GitHub credentials from Streamlit secrets
+        if "github" not in st.secrets:
+            print("GitHub secrets not configured")
+            return False
+        
+        token = st.secrets["github"]["token"]
+        username = st.secrets["github"]["username"]
+        repo = st.secrets["github"]["repo"]
+        
+        # Read the file content
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # GitHub API endpoint
+        api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{file_path}"
+        
+        import requests
+        import base64
+        
+        # Get the current file SHA (required for updates)
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        
+        response = requests.get(api_url, headers=headers)
+        sha = response.json().get('sha') if response.status_code == 200 else None
+        
+        # Prepare the update
+        content_base64 = base64.b64encode(content.encode()).decode()
+        
+        data = {
+            "message": commit_message,
+            "content": content_base64,
+            "branch": "main"
+        }
+        
+        if sha:
+            data["sha"] = sha
+        
+        # Commit the file
+        response = requests.put(api_url, headers=headers, json=data)
+        
+        if response.status_code in [200, 201]:
+            print(f"Successfully committed {file_path}")
+            return True
+        else:
+            print(f"Failed to commit: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"Error committing to GitHub: {e}")
+        return False
 
 def load_books(filepath='data/books.json'):
     '''Load books from JSON file'''
@@ -19,12 +77,15 @@ def load_books(filepath='data/books.json'):
             return []
     return []
 
-def save_books(books, filepath='data/books.json'):
-    '''Save books to JSON file'''
+def save_books(books, filepath='data/books.json', auto_commit=True):
+    '''Save books to JSON file and optionally commit to GitHub'''
     ensure_data_directory()
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(books, f, indent=2, ensure_ascii=False)
+        
+        if auto_commit:
+            commit_to_github(filepath, f"Update books - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     except Exception as e:
         print(f"Error saving books: {e}")
 
@@ -40,12 +101,15 @@ def load_votes(filepath='data/votes.json'):
             return []
     return []
 
-def save_votes(votes, filepath='data/votes.json'):
-    '''Save votes to JSON file'''
+def save_votes(votes, filepath='data/votes.json', auto_commit=True):
+    '''Save votes to JSON file and optionally commit to GitHub'''
     ensure_data_directory()
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(votes, f, indent=2, ensure_ascii=False)
+        
+        if auto_commit:
+            commit_to_github(filepath, f"Update votes - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     except Exception as e:
         print(f"Error saving votes: {e}")
 
