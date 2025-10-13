@@ -117,15 +117,28 @@ if page == "Submit Books":
                 if book_exists(st.session_state.books, book_title, author):
                     st.warning("⚠️ This book has already been submitted!")
                 else:
-                    with st.spinner("🔍 Fetching book information from Wikipedia..."):
+                    with st.spinner("🔍 Fetching book information..."):
                         book_entry = add_book(st.session_state.books, book_title, author, user)
-                        book_data = fetch_book_data_wikipedia(book_title, author)
+    
+                        # Try Google Books first (best data)
+                        book_data = fetch_book_data_google(book_title, author)
+    
+                        # If Google fails, try Open Library
+                        if not book_data:
+                            book_data = fetch_book_data_openlibrary(book_title, author)
+    
+                        # If both fail, try Wikipedia
+                        if not book_data:
+                            book_data = fetch_book_data_wikipedia(book_title, author)
+    
                         if book_data:
                             book_entry.update(book_data)
-                            st.success(f"✅ '{book_title}' by {author} has been added!")
+                            st.success(f"✅ '{book_title}' by {author} has been added with details!")
                         else:
                             book_entry.update(get_default_book_data())
-                            st.success(f"✅ '{book_title}' by {author} has been added (no extra data).")
+                            st.success(f"✅ '{book_title}' by {author} has been added!")
+                            st.info("ℹ️ Book data unavailable from all sources")
+    
                         auto_save()
                         st.rerun()
             else:
