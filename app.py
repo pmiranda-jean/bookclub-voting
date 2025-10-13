@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 
-from utils.scraper import fetch_book_data_wikipedia, get_default_book_data
+from utils.scraper import fetch_book_data_google, fetch_book_data_openlibrary, fetch_book_data_wikipedia, get_default_book_data
 from utils.data_manager import (
     load_books, save_books, load_votes, save_votes,
     add_book, book_exists, add_vote, has_voted,
@@ -79,7 +79,7 @@ is_admin = st.session_state.current_user == "Phil"
 
 # Page navigation - only show all pages to Phil
 if is_admin:
-    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results"])
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results", "🔧 Debug"])
 else:
     page = "Submit Books"
     st.sidebar.info("📌 You are on the Submit Books page")
@@ -352,6 +352,107 @@ elif page == "Results":
                 })
             
             st.dataframe(pd.DataFrame(df_results), use_container_width=True, hide_index=True)
+
+# ==================== PAGE 4: Debug (Phil Only) ====================
+elif page == "🔧 Debug":
+    if not is_admin:
+        st.error("⛔ Access Denied")
+        st.stop()
+    
+    st.title("🔧 Debug & Diagnostics")
+    
+    st.header("1️⃣ GitHub Secrets Check")
+    if "github" in st.secrets:
+        st.success("✅ GitHub secrets are configured!")
+        st.write(f"**Username:** {st.secrets['github']['username']}")
+        st.write(f"**Repo:** {st.secrets['github']['repo']}")
+        st.write(f"**Token:** `{st.secrets['github']['token'][:10]}...` (hidden)")
+    else:
+        st.error("❌ GitHub secrets NOT found!")
+        st.info("Go to Streamlit Cloud → App Settings → Secrets and add your GitHub credentials")
+    
+    st.divider()
+    
+    st.header("2️⃣ Test GitHub Connection")
+    if st.button("🧪 Test GitHub API Connection"):
+        try:
+            import requests
+            token = st.secrets["github"]["token"]
+            username = st.secrets["github"]["username"]
+            repo = st.secrets["github"]["repo"]
+            
+            with st.spinner("Testing connection..."):
+                # Test API access
+                api_url = f"https://api.github.com/repos/{username}/{repo}"
+                headers = {
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+                
+                response = requests.get(api_url, headers=headers)
+                
+                if response.status_code == 200:
+                    st.success("✅ Successfully connected to GitHub!")
+                    repo_data = response.json()
+                    st.write(f"**Repo Name:** {repo_data['name']}")
+                    st.write(f"**Full Name:** {repo_data['full_name']}")
+                    st.write(f"**Default Branch:** {repo_data['default_branch']}")
+                else:
+                    st.error(f"❌ Connection failed: {response.status_code}")
+                    st.code(response.text)
+        except Exception as e:
+            st.error(f"❌ Error: {e}")
+    
+    st.divider()
+    
+    st.header("3️⃣ Current Data")
+    st.write(f"**Books loaded:** {len(st.session_state.books)}")
+    st.write(f"**Votes loaded:** {len(st.session_state.votes)}")
+    
+    if st.session_state.books:
+        st.subheader("Books in Memory:")
+        st.json(st.session_state.books)
+    
+    st.divider()
+    
+    st.header("4️⃣ Manual GitHub Push Test")
+    if st.button("🚀 Manually Push books.json to GitHub"):
+        from utils.data_manager import commit_to_github
+        success = commit_to_github('data/books.json', 'Manual test commit from debug page')
+        if success:
+            st.success("✅ Successfully pushed to GitHub!")
+        else:
+            st.error("❌ Failed to push to GitHub - check logs")
+    
+    st.divider()
+    
+    st.header("5️⃣ Check GitHub Files")
+    if st.button("🔍 Check if data files exist in GitHub"):
+        try:
+            token = st.secrets["github"]["token"]
+            username = st.secrets["github"]["username"]
+            repo = st.secrets["github"]["repo"]
+            
+            headers = {
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            for filename in ['data/books.json', 'data/votes.json']:
+                api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{filename}"
+                response = requests.get(api_url, headers=headers)
+                
+                if response.status_code == 200:
+                    st.success(f"✅ `{filename}` exists in GitHub")
+                    data = response.json()
+                    st.write(f"  - Size: {data['size']} bytes")
+                    st.write(f"  - SHA: {data['sha'][:8]}...")
+                elif response.status_code == 404:
+                    st.warning(f"⚠️ `{filename}` NOT found in GitHub")
+                else:
+                    st.error(f"❌ Error checking `{filename}`: {response.status_code}")
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 # ==================== SIDEBAR: Data Management ====================
 with st.sidebar:
