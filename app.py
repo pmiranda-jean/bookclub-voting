@@ -185,11 +185,11 @@ if page == "Submit Books":
                         #    st.session_state.selected_book[book_idx] = True
                         #    st.rerun()
 
-                        if user == book["submitter"] or is_admin:
-                            if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
-                                st.session_state.books.pop(book_idx)
-                                auto_save()
-                                st.rerun()
+                    if user == book["submitter"] or is_admin:
+                        if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
+                            st.session_state.books.pop(book_idx)
+                            auto_save()
+                            st.rerun()
     else:
         st.info("👋 No books submitted yet.")
 
