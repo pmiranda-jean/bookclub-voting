@@ -174,7 +174,7 @@ elif page == "View Books & Vote":
 
     # --- Load books from JSON ---
     import json, os
-    BOOKS_PATH = "/Users/philippemiranda-jean/Desktop/BookClub_Streamlit/data/books.json"
+    BOOKS_PATH = os.path.join(os.path.dirname(__file__), "data", "books.json")
 
     if os.path.exists(BOOKS_PATH):
         with open(BOOKS_PATH, "r") as f:

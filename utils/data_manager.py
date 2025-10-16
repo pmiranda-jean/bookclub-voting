@@ -70,14 +70,14 @@ def commit_to_github(file_path, commit_message):
         response = requests.put(api_url, headers=headers, json=data)
         
         if response.status_code in [200, 201]:
-            print(f"✅ Successfully committed {file_path} to GitHub!")
-            st.toast(f"✅ Saved to GitHub!", icon="💾")
+            #print(f"✅ Successfully committed {file_path} to GitHub!")
+            #st.toast(f"✅ Saved to GitHub!", icon="💾")
             return True
         else:
             error_msg = response.json().get('message', response.text) if response.text else "Unknown error"
-            print(f"❌ Failed to commit: {response.status_code}")
+            #print(f"❌ Failed to commit: {response.status_code}")
             print(f"Error details: {error_msg}")
-            st.error(f"Failed to save to GitHub: {error_msg}")
+            #st.error(f"Failed to save to GitHub: {error_msg}")
             return False
             
     except Exception as e:
