@@ -181,9 +181,9 @@ if page == "Submit Books":
                                 </div>
                             """, unsafe_allow_html=True)
 
-                        if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
-                            st.session_state.selected_book[book_idx] = True
-                            st.rerun()
+                        #if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
+                        #    st.session_state.selected_book[book_idx] = True
+                        #    st.rerun()
 
                         if user == book["submitter"] or is_admin:
                             if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
