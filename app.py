@@ -3,6 +3,9 @@ import pandas as pd
 import json
 import os
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 from utils.data_manager import (
     load_books, save_books, load_votes, save_votes,
     add_book, book_exists, add_vote, has_voted,
