@@ -144,20 +144,23 @@ if page == "Submit Books":
                                 border: 2px solid #4CAF50;
                                 padding: 20px;
                                 text-align: left;
-                                min-height: 300px;
-                                border-radius: 5px;
+                                border-radius: 10px;
+                                box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
                             ">
-                                <p style="font-size: 1.1rem; font-weight: bold;">{book['title']}</p>
-                                <p style="color: #666;">by {book['author']}</p>
-                                <hr>
-                                <p><strong>📄 Pages:</strong> {book.get('pages', 'N/A')}</p>
-                                <p><strong>🏷️ Genre:</strong> {book.get('genres', 'N/A')}</p>
-                                <p><strong>📝 Summary:</strong><br>{book.get('summary', 'No summary available')}</p>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        if st.button("⬅️ Back", key=f"back_{book_idx}", use_container_width=True):
-                            st.session_state.selected_book[book_idx] = False
-                            st.rerun()
+                            <h3 style="margin-bottom: 0;">{book['title']}</h3>
+                            <p style="margin-top: 0.2rem; color: #555;">by {book['author']}</p>
+                            <hr>
+                            <p><strong>📅 Year:</strong> {book.get('year', 'N/A')}</p>
+                            <p><strong>📄 Pages:</strong> {book.get('pages', 'N/A')}</p>
+                            <p><strong>🏷️ Genre:</strong> {book.get('genres', 'N/A')}</p>
+                            <p><strong>📝 Summary:</strong><br>{book.get('summary', 'No summary available')}</p>
+                            <p><a href="{book.get('url', '#')}" target="_blank">🔗 View on Goodreads</a></p>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    if st.button("⬅️ Back", key=f"back_{book_idx}", use_container_width=True):
+                        st.session_state.selected_book[book_idx] = False
+                        st.rerun()
                     else:
                         if has_cover:
                             st.image(cover_path, use_container_width=True)
