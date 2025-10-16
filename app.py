@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
+import os
 
 from utils.data_manager import (
     load_books, save_books, load_votes, save_votes,
@@ -11,6 +12,7 @@ from config.settings import (
     APP_TITLE, MAX_VOTES_PER_PERSON, TOTAL_POINTS, TOP_BOOKS_TO_DISPLAY
 )
 
+# ==================== APP CONFIG ====================
 st.set_page_config(
     page_title=APP_TITLE,
     page_icon="📚",
@@ -20,11 +22,10 @@ st.set_page_config(
 
 USER_LIST = ["Gab", "Nonna", "Phil", "Silvia", "Kathy", "Val"]
 
-# Initialize user session
+# ==================== LOGIN ====================
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
 
-# Simple login flow
 if not st.session_state.current_user:
     st.title("👋 Welcome to our Book Club Website!")
     st.info("Please select your name to continue:")
@@ -36,14 +37,14 @@ if not st.session_state.current_user:
             st.rerun()
         else:
             st.warning("⚠️ Please select your name before continuing.")
-    st.stop()  # 🧠 This stops the rest of the app from loading
+    st.stop()
 else:
     st.sidebar.success(f"Logged in as: **{st.session_state.current_user}**")
     if st.sidebar.button("🔄 Switch User"):
         st.session_state.current_user = None
         st.rerun()
 
-# Custom CSS for better styling
+# ==================== CUSTOM CSS ====================
 st.markdown("""
     <style>
     .main-header {
@@ -60,48 +61,38 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state with file persistence
+# ==================== DATA LOADING ====================
 if 'books' not in st.session_state:
     st.session_state.books = load_books()
 if 'votes' not in st.session_state:
     st.session_state.votes = load_votes()
-if 'initialized' not in st.session_state:
-    st.session_state.initialized = True
 
-# Auto-save function
 def auto_save():
     save_books(st.session_state.books)
     save_votes(st.session_state.votes)
 
-# Check if current user is admin (Phil)
 is_admin = st.session_state.current_user == "Phil"
 
-# Page navigation - only show all pages to Phil
+# ==================== NAVIGATION ====================
 if is_admin:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results", "🔧 Debug"])
 else:
     page = "Submit Books"
     st.sidebar.info("📌 You are on the Submit Books page")
 
-# ==================== PAGE 1: Submit Books ====================
+# ==================== PAGE 1: SUBMIT BOOKS ====================
 if page == "Submit Books":
     user = st.session_state.current_user
-
     st.markdown(f'<p class="main-header">📚 Submit Your Book Choice ({user})</p>', unsafe_allow_html=True)
 
-    # Filter user's submissions
     user_books = [b for b in st.session_state.books if b["submitter"] == user]
+    can_submit = len(user_books) < 5
 
-    # Submission limit logic
-    if len(user_books) >= 5:
-        st.warning("⚠️ You have reached the maximum of 5 submissions. Please delete one of your submission before adding a new book.")
-        can_submit = False
-    else:
-        can_submit = True
+    if not can_submit:
+        st.warning("⚠️ You have reached the maximum of 5 submissions.")
 
     with st.form("book_submission"):
         col1, col2 = st.columns(2)
-
         with col1:
             book_title = st.text_input("Book Title *", placeholder="e.g., The Great Gatsby")
         with col2:
@@ -111,146 +102,90 @@ if page == "Submit Books":
 
         if submitted:
             if not can_submit:
-                st.error("❌ Submission limit reached. Delete one of your books first.")
+                st.error("❌ Submission limit reached.")
             elif book_title and author:
                 if book_exists(st.session_state.books, book_title, author):
                     st.warning("⚠️ This book has already been submitted!")
                 else:
-                    with st.spinner("🔍 Fetching book information..."):
-                        book_entry = add_book(st.session_state.books, book_title, author, user)
-                        
-                        # Try Google Books first (best data)
-                        book_data = fetch_book_data_google(book_title, author)
-                        
-                        # If Google fails, try Open Library
-                        if not book_data:
-                            book_data = fetch_book_data_openlibrary(book_title, author)
-                        
-                        # If both fail, try Wikipedia
-                        if not book_data:
-                            book_data = fetch_book_data_wikipedia(book_title, author)
-                        
-                        if book_data:
-                            book_entry.update(book_data)
-                            st.success(f"✅ '{book_title}' by {author} has been added with details!")
-                        else:
-                            book_entry.update(get_default_book_data())
-                            st.success(f"✅ '{book_title}' by {author} has been added!")
-                            st.info("ℹ️ Book data unavailable from all sources")
-                        
-                        auto_save()
-                        st.rerun()
+                    # Add basic entry only (no API calls)
+                    book_entry = add_book(st.session_state.books, book_title, author, user)
+                    st.success(f"✅ '{book_title}' by {author} has been added!")
+                    auto_save()
+                    st.rerun()
             else:
-                st.error("❌ Please fill in all required fields (marked with *)")
+                st.error("❌ Please fill in all required fields")
 
     st.divider()
 
-    # Initialize session state for selected books
-    if 'selected_book' not in st.session_state:
-        st.session_state.selected_book = {}
-
-    # Display submitted books in card layout
+    # ==================== DISPLAY BOOKS ====================
     if st.session_state.books:
         st.subheader(f"📚 All Submitted Books ({len(st.session_state.books)})")
-        
-        # Create rows of 3 books each
+
+        if 'selected_book' not in st.session_state:
+            st.session_state.selected_book = {}
+
         for row_start in range(0, len(st.session_state.books), 3):
             cols = st.columns(3)
-            
             for col_idx, col in enumerate(cols):
                 book_idx = row_start + col_idx
-                
-                if book_idx < len(st.session_state.books):
-                    book = st.session_state.books[book_idx]
-                    
-                    with col:
-                        # Check if this book is currently selected (showing details)
-                        is_selected = st.session_state.selected_book.get(book_idx, False)
-                        
-                        if is_selected:
-                            # Show details view
+                if book_idx >= len(st.session_state.books):
+                    continue
+                book = st.session_state.books[book_idx]
+                is_selected = st.session_state.selected_book.get(book_idx, False)
+
+                with col:
+                    cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                    has_cover = os.path.exists(cover_path)
+
+                    if is_selected:
+                        st.markdown(f"""
+                            <div style="
+                                background-color: #f0f2f6;
+                                border: 2px solid #4CAF50;
+                                padding: 20px;
+                                text-align: left;
+                                min-height: 300px;
+                                border-radius: 5px;
+                            ">
+                                <p style="font-size: 1.1rem; font-weight: bold;">{book['title']}</p>
+                                <p style="color: #666;">by {book['author']}</p>
+                                <hr>
+                                <p><strong>📄 Pages:</strong> {book.get('pages', 'N/A')}</p>
+                                <p><strong>🏷️ Genre:</strong> {book.get('genres', 'N/A')}</p>
+                                <p><strong>📝 Summary:</strong><br>{book.get('summary', 'No summary available')}</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        if st.button("⬅️ Back", key=f"back_{book_idx}", use_container_width=True):
+                            st.session_state.selected_book[book_idx] = False
+                            st.rerun()
+                    else:
+                        if has_cover:
+                            st.image(cover_path, use_column_width=True)
+                        else:
                             st.markdown(f"""
                                 <div style="
-                                    background-color: #f0f2f6;
-                                    border: 2px solid #4CAF50;
-                                    padding: 20px;
-                                    text-align: left;
+                                    background-color: white;
+                                    border: 1px solid #ddd;
+                                    padding: 40px 20px;
+                                    text-align: center;
                                     min-height: 300px;
-                                    border-radius: 5px;
                                 ">
-                                    <p style="color: #333; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">
-                                        {book['title']}
-                                    </p>
-                                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
-                                        by {book['author']}
-                                    </p>
-                                    <hr style="margin: 10px 0;">
-                                    <p style="color: #444; font-size: 0.85rem; margin-bottom: 8px;">
-                                        📄 <strong>Pages:</strong> {book.get('pages', 'N/A')}
-                                    </p>
-                                    <p style="color: #444; font-size: 0.85rem; margin-bottom: 12px;">
-                                        🏷️ <strong>Genre:</strong> {book.get('genres', 'N/A')}
-                                    </p>
-                                    <p style="color: #444; font-size: 0.85rem; line-height: 1.4;">
-                                        📝 <strong>Summary:</strong><br>
-                                        {book.get('summary', 'No summary available')}
-                                    </p>
+                                    <p style="font-weight: bold;">{book['title']}</p>
+                                    <p style="color: #666;">{book['author']}</p>
                                 </div>
                             """, unsafe_allow_html=True)
-                            
-                            # Button to go back to image view
-                            if st.button("⬅️ Back to cover", key=f"back_{book_idx}", use_container_width=True):
-                                st.session_state.selected_book[book_idx] = False
-                                st.rerun()
-                        else:
-                            # Show image view (clickable)
-                            # Check if custom image exists in covers folder
-                            import os
-                            custom_image_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
-                            
-                            if os.path.exists(custom_image_path):
-                                # Use custom image from covers folder
-                                st.image(custom_image_path, use_column_width=True)
-                            elif book.get('image_url'):
-                                # Use API image
-                                st.image(book['image_url'], use_column_width=True)
-                            else:
-                                # Create placeholder with title and author
-                                st.markdown(f"""
-                                    <div style="
-                                        background-color: white;
-                                        border: 1px solid #ddd;
-                                        padding: 40px 20px;
-                                        text-align: center;
-                                        min-height: 300px;
-                                        display: flex;
-                                        flex-direction: column;
-                                        justify-content: center;
-                                        align-items: center;
-                                    ">
-                                        <p style="color: black; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
-                                            {book['title']}
-                                        </p>
-                                        <p style="color: #666; font-size: 1rem;">
-                                            {book['author']}
-                                        </p>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            
-                            # Button to show details
-                            if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
-                                st.session_state.selected_book[book_idx] = True
-                                st.rerun()
-                            
-                            # Delete button for submitter or admin
-                            if user == book["submitter"] or is_admin:
-                                if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
-                                    st.session_state.books.pop(book_idx)
-                                    auto_save()
-                                    st.rerun()
-    else:
-        st.info("👋 No books submitted yet. Be the first to add one!")
 
+                        if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
+                            st.session_state.selected_book[book_idx] = True
+                            st.rerun()
+
+                        if user == book["submitter"] or is_admin:
+                            if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
+                                st.session_state.books.pop(book_idx)
+                                auto_save()
+                                st.rerun()
+    else:
+        st.info("👋 No books submitted yet.")
 
 # ==================== PAGE 2: View Books & Vote (Phil Only) ====================
 elif page == "View Books & Vote":
