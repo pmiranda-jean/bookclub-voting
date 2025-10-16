@@ -160,7 +160,7 @@ if page == "Submit Books":
                             st.rerun()
                     else:
                         if has_cover:
-                            st.image(cover_path, use_column_width=True)
+                            st.image(cover_path, use_container_width=True)
                         else:
                             st.markdown(f"""
                                 <div style="
@@ -207,7 +207,7 @@ elif page == "View Books & Vote":
                 
                 with col1:
                     if book.get('image_url'):
-                        st.image(book['image_url'], use_column_width=True)
+                        st.image(book['image_url'], use_container_width=True)
                     else:
                         st.markdown("### 📘")
                 
@@ -343,7 +343,7 @@ elif page == "Results":
                 with col1:
                     st.markdown(f"### {medal}")
                     if book.get('image_url'):
-                        st.image(book['image_url'], use_column_width=True)
+                        st.image(book['image_url'], use_container_width=True)
                 
                 with col2:
                     st.subheader(f"{book['title']}")
