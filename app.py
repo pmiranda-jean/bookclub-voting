@@ -81,18 +81,18 @@ if is_admin:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books & Vote", "Results", "🔧 Debug"])
 else:
     page = "Submit Books"
-    st.sidebar.info("📌 You are on the Submit Books page")
+    #st.sidebar.info("📌 You are on the Submit Books page")
 
 # ==================== PAGE 1: SUBMIT BOOKS ====================
 if page == "Submit Books":
     user = st.session_state.current_user
-    st.markdown(f'<p class="main-header">📚 Submit Your Book Choice ({user})</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="main-header">📚 {user}, Submit Your Book Choice,! </p>', unsafe_allow_html=True)
 
     user_books = [b for b in st.session_state.books if b["submitter"] == user]
     can_submit = len(user_books) < 5
 
     if not can_submit:
-        st.warning("⚠️ You have reached the maximum of 5 submissions.")
+        st.warning("⚠️ You have reached the maximum of 5 submissions. If you want to change your choices, click on the delete button below the removed book.")
 
     with st.form("book_submission"):
         col1, col2 = st.columns(2)
@@ -108,7 +108,7 @@ if page == "Submit Books":
                 st.error("❌ Submission limit reached.")
             elif book_title and author:
                 if book_exists(st.session_state.books, book_title, author):
-                    st.warning("⚠️ This book has already been submitted!")
+                    st.warning("⚠️ This book has already been submitted! Choose another one.")
                 else:
                     # Add basic entry only (no API calls)
                     book_entry = add_book(st.session_state.books, book_title, author, user)
@@ -122,7 +122,7 @@ if page == "Submit Books":
 
     # ==================== DISPLAY BOOKS ====================
     if st.session_state.books:
-        st.subheader(f"📚 All Submitted Books ({len(st.session_state.books)})")
+        st.subheader(f"📚 Submitted Books")
 
         if 'selected_book' not in st.session_state:
             st.session_state.selected_book = {}
@@ -140,31 +140,6 @@ if page == "Submit Books":
                     cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
                     has_cover = os.path.exists(cover_path)
 
-                    #if is_selected:
-                    #    st.markdown(f"""
-                    #        <div style="
-                    #            background-color: #f0f2f6;
-                    #            border: 2px solid #4CAF50;
-                    #            padding: 20px;
-                    #            text-align: left;
-                    #            border-radius: 10px;
-                    #            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-                    #        ">
-                    #        <h3 style="margin-bottom: 0;">{book['title']}</h3>
-                    #        <p style="margin-top: 0.2rem; color: #555;">by {book['author']}</p>
-                    #        <hr>
-                    #        <p><strong>📅 Year:</strong> {book.get('year', 'N/A')}</p>
-                    #        <p><strong>📄 Pages:</strong> {book.get('pages', 'N/A')}</p>
-                    #        <p><strong>🏷️ Genre:</strong> {book.get('genres', 'N/A')}</p>
-                    #        <p><strong>📝 Summary:</strong><br>{book.get('summary', 'No summary available')}</p>
-                    #        <p><a href="{book.get('url', '#')}" target="_blank">🔗 View on Goodreads</a></p>
-                    #    </div>
-                    #""", unsafe_allow_html=True)
-
-                    #if st.button("⬅️ Back", key=f"back_{book_idx}", use_container_width=True):
-                    #    st.session_state.selected_book[book_idx] = False
-                    #    st.rerun()
-                    #else:
                     if has_cover:
                         st.image(cover_path, use_container_width=True)
                     else:
@@ -181,10 +156,6 @@ if page == "Submit Books":
                                 </div>
                             """, unsafe_allow_html=True)
 
-                        #if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
-                        #    st.session_state.selected_book[book_idx] = True
-                        #    st.rerun()
-
                     if user == book["submitter"] or is_admin:
                         if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
                             st.session_state.books.pop(book_idx)
@@ -198,38 +169,49 @@ elif page == "View Books & Vote":
     if not is_admin:
         st.error("⛔ Access Denied: This page is only available to Phil.")
         st.stop()
-    
+
     st.markdown('<p class="main-header">📖 View Books & Cast Your Vote</p>', unsafe_allow_html=True)
-    
-    if not st.session_state.books:
+
+    # --- Load books from JSON ---
+    import json, os
+    BOOKS_PATH = os.path.join("data", "books.json")
+
+    if os.path.exists(BOOKS_PATH):
+        with open(BOOKS_PATH, "r") as f:
+            books = json.load(f)
+    else:
+        books = []
+
+    if not books:
         st.warning("📚 No books have been submitted yet. Please go to 'Submit Books' page first.")
     else:
-        # Display all books with details
         st.header("📚 Available Books")
-        
-        for idx, book in enumerate(st.session_state.books):
+
+        # Display each book
+        for idx, book in enumerate(books):
             with st.container():
-                col1, col2 = st.columns([1, 4])
-                
+                col1, col2 = st.columns([1, 3])
+
+                # --- Left column: Book cover ---
                 with col1:
-                    if book.get('image_url'):
-                        st.image(book['image_url'], use_container_width=True)
+                    cover_filename = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                    if os.path.exists(cover_filename):
+                        st.image(cover_filename, use_container_width=True)
                     else:
-                        st.markdown("### 📘")
-                
+                        st.image("covers/default.jpg", use_container_width=True)
+
+                # --- Right column: Book details ---
                 with col2:
-                    st.subheader(f"{book['title']}")
-                    st.write(f"**Author:** {book['author']}")
-                    
-                    info_col1, info_col2 = st.columns(2)
-                    with info_col1:
-                        st.write(f"📄 **Pages:** {book.get('pages', 'N/A')}")
-                    with info_col2:
-                        st.write(f"🏷️ **Genre:** {book.get('genres', 'N/A')}")
-                    
-                    st.write(f"📝 **Summary:** {book.get('summary', 'No summary available')}")
-                    st.caption(f"*Submitted by: {book['submitter']}*")
-                
+                    st.markdown(f"### {book['title']}")
+                    st.markdown(f"**Author:** {book.get('author', 'Unknown')}")
+                    st.markdown(f"**Year of Publication:** {book.get('year', 'N/A')}")
+                    st.markdown(f"**Genre:** {book.get('genres', 'N/A')}")
+                    st.markdown(f"**Pages:** {book.get('pages', 'N/A')}")
+                    st.markdown(f"**Summary:** {book.get('summary', 'No summary available')}")
+                    if book.get('url'):
+                        st.markdown(f"[🔗 View on Goodreads]({book['url']})")
+                    st.caption(f"*Submitted by: {book.get('submitter', 'Anonymous')}*")
+
                 st.divider()
         
         # Voting Section
