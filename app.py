@@ -119,18 +119,18 @@ if page == "Submit Books":
                 else:
                     with st.spinner("🔍 Fetching book information..."):
                         book_entry = add_book(st.session_state.books, book_title, author, user)
-    
+                        
                         # Try Google Books first (best data)
                         book_data = fetch_book_data_google(book_title, author)
-    
+                        
                         # If Google fails, try Open Library
                         if not book_data:
                             book_data = fetch_book_data_openlibrary(book_title, author)
-    
+                        
                         # If both fail, try Wikipedia
                         if not book_data:
                             book_data = fetch_book_data_wikipedia(book_title, author)
-    
+                        
                         if book_data:
                             book_entry.update(book_data)
                             st.success(f"✅ '{book_title}' by {author} has been added with details!")
@@ -138,7 +138,7 @@ if page == "Submit Books":
                             book_entry.update(get_default_book_data())
                             st.success(f"✅ '{book_title}' by {author} has been added!")
                             st.info("ℹ️ Book data unavailable from all sources")
-    
+                        
                         auto_save()
                         st.rerun()
             else:
@@ -146,24 +146,65 @@ if page == "Submit Books":
 
     st.divider()
 
-    # Display submitted books
+    # Display submitted books in card layout
     if st.session_state.books:
         st.subheader(f"📚 All Submitted Books ({len(st.session_state.books)})")
-
-        for idx, book in enumerate(st.session_state.books):
-            with st.expander(f"📖 {book['title']} by {book['author']}"):
-                col1, col2 = st.columns([1, 3])
-
-                with col1:
-                    st.write(f"**Submitted by:** {book['submitter']}")
-
-                with col2:
-                    # Delete logic - only submitter or Phil can delete
-                    if user == book["submitter"] or is_admin:
-                        if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
-                            st.session_state.books.pop(idx)
-                            auto_save()
-                            st.rerun()
+        
+        # Create rows of 3 books each
+        for row_start in range(0, len(st.session_state.books), 3):
+            cols = st.columns(3)
+            
+            for col_idx, col in enumerate(cols):
+                book_idx = row_start + col_idx
+                
+                if book_idx < len(st.session_state.books):
+                    book = st.session_state.books[book_idx]
+                    
+                    with col:
+                        # Check if custom image exists in covers folder
+                        import os
+                        custom_image_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                        
+                        if os.path.exists(custom_image_path):
+                            # Use custom image from covers folder
+                            st.image(custom_image_path, use_column_width=True)
+                        elif book.get('image_url'):
+                            # Use API image
+                            st.image(book['image_url'], use_column_width=True)
+                        else:
+                            # Create placeholder with title and author
+                            st.markdown(f"""
+                                <div style="
+                                    background-color: white;
+                                    border: 1px solid #ddd;
+                                    padding: 40px 20px;
+                                    text-align: center;
+                                    min-height: 300px;
+                                    display: flex;
+                                    flex-direction: column;
+                                    justify-content: center;
+                                    align-items: center;
+                                ">
+                                    <p style="color: black; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+                                        {book['title']}
+                                    </p>
+                                    <p style="color: #666; font-size: 1rem;">
+                                        {book['author']}
+                                    </p>
+                                </div>
+                            """, unsafe_allow_html=True)
+                        
+                        # Book title and author below image
+                        st.markdown(f"**{book['title']}**")
+                        st.caption(f"by {book['author']}")
+                        st.caption(f"*Submitted by {book['submitter']}*")
+                        
+                        # Delete button for submitter or admin
+                        if user == book["submitter"] or is_admin:
+                            if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
+                                st.session_state.books.pop(book_idx)
+                                auto_save()
+                                st.rerun()
     else:
         st.info("👋 No books submitted yet. Be the first to add one!")
 
