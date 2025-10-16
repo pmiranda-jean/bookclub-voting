@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 
-from utils.scraper import fetch_book_data_google, fetch_book_data_openlibrary, fetch_book_data_wikipedia, get_default_book_data
 from utils.data_manager import (
     load_books, save_books, load_votes, save_votes,
     add_book, book_exists, add_vote, has_voted,
@@ -27,7 +26,7 @@ if "current_user" not in st.session_state:
 
 # Simple login flow
 if not st.session_state.current_user:
-    st.title("👋 Welcome to our Book Club Website")
+    st.title("👋 Welcome to our Book Club Website!")
     st.info("Please select your name to continue:")
     user = st.selectbox("Your Name", USER_LIST, index=None, placeholder="Select your name")
 
@@ -237,11 +236,6 @@ if page == "Submit Books":
                                         </p>
                                     </div>
                                 """, unsafe_allow_html=True)
-                            
-                            # Book title and author below image
-                            st.markdown(f"**{book['title']}**")
-                            st.caption(f"by {book['author']}")
-                            st.caption(f"*Submitted by {book['submitter']}*")
                             
                             # Button to show details
                             if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
