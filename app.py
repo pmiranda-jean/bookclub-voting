@@ -146,6 +146,10 @@ if page == "Submit Books":
 
     st.divider()
 
+    # Initialize session state for selected books
+    if 'selected_book' not in st.session_state:
+        st.session_state.selected_book = {}
+
     # Display submitted books in card layout
     if st.session_state.books:
         st.subheader(f"📚 All Submitted Books ({len(st.session_state.books)})")
@@ -161,50 +165,95 @@ if page == "Submit Books":
                     book = st.session_state.books[book_idx]
                     
                     with col:
-                        # Check if custom image exists in covers folder
-                        import os
-                        custom_image_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                        # Check if this book is currently selected (showing details)
+                        is_selected = st.session_state.selected_book.get(book_idx, False)
                         
-                        if os.path.exists(custom_image_path):
-                            # Use custom image from covers folder
-                            st.image(custom_image_path, use_column_width=True)
-                        elif book.get('image_url'):
-                            # Use API image
-                            st.image(book['image_url'], use_column_width=True)
-                        else:
-                            # Create placeholder with title and author
+                        if is_selected:
+                            # Show details view
                             st.markdown(f"""
                                 <div style="
-                                    background-color: white;
-                                    border: 1px solid #ddd;
-                                    padding: 40px 20px;
-                                    text-align: center;
+                                    background-color: #f0f2f6;
+                                    border: 2px solid #4CAF50;
+                                    padding: 20px;
+                                    text-align: left;
                                     min-height: 300px;
-                                    display: flex;
-                                    flex-direction: column;
-                                    justify-content: center;
-                                    align-items: center;
+                                    border-radius: 5px;
                                 ">
-                                    <p style="color: black; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+                                    <p style="color: #333; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px;">
                                         {book['title']}
                                     </p>
-                                    <p style="color: #666; font-size: 1rem;">
-                                        {book['author']}
+                                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
+                                        by {book['author']}
+                                    </p>
+                                    <hr style="margin: 10px 0;">
+                                    <p style="color: #444; font-size: 0.85rem; margin-bottom: 8px;">
+                                        📄 <strong>Pages:</strong> {book.get('pages', 'N/A')}
+                                    </p>
+                                    <p style="color: #444; font-size: 0.85rem; margin-bottom: 12px;">
+                                        🏷️ <strong>Genre:</strong> {book.get('genres', 'N/A')}
+                                    </p>
+                                    <p style="color: #444; font-size: 0.85rem; line-height: 1.4;">
+                                        📝 <strong>Summary:</strong><br>
+                                        {book.get('summary', 'No summary available')}
                                     </p>
                                 </div>
                             """, unsafe_allow_html=True)
-                        
-                        # Book title and author below image
-                        st.markdown(f"**{book['title']}**")
-                        st.caption(f"by {book['author']}")
-                        st.caption(f"*Submitted by {book['submitter']}*")
-                        
-                        # Delete button for submitter or admin
-                        if user == book["submitter"] or is_admin:
-                            if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
-                                st.session_state.books.pop(book_idx)
-                                auto_save()
+                            
+                            # Button to go back to image view
+                            if st.button("⬅️ Back to cover", key=f"back_{book_idx}", use_container_width=True):
+                                st.session_state.selected_book[book_idx] = False
                                 st.rerun()
+                        else:
+                            # Show image view (clickable)
+                            # Check if custom image exists in covers folder
+                            import os
+                            custom_image_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                            
+                            if os.path.exists(custom_image_path):
+                                # Use custom image from covers folder
+                                st.image(custom_image_path, use_column_width=True)
+                            elif book.get('image_url'):
+                                # Use API image
+                                st.image(book['image_url'], use_column_width=True)
+                            else:
+                                # Create placeholder with title and author
+                                st.markdown(f"""
+                                    <div style="
+                                        background-color: white;
+                                        border: 1px solid #ddd;
+                                        padding: 40px 20px;
+                                        text-align: center;
+                                        min-height: 300px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        justify-content: center;
+                                        align-items: center;
+                                    ">
+                                        <p style="color: black; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+                                            {book['title']}
+                                        </p>
+                                        <p style="color: #666; font-size: 1rem;">
+                                            {book['author']}
+                                        </p>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            
+                            # Book title and author below image
+                            st.markdown(f"**{book['title']}**")
+                            st.caption(f"by {book['author']}")
+                            st.caption(f"*Submitted by {book['submitter']}*")
+                            
+                            # Button to show details
+                            if st.button("📖 View Details", key=f"view_{book_idx}", use_container_width=True):
+                                st.session_state.selected_book[book_idx] = True
+                                st.rerun()
+                            
+                            # Delete button for submitter or admin
+                            if user == book["submitter"] or is_admin:
+                                if st.button("🗑️ Delete", key=f"delete_{book_idx}", use_container_width=True):
+                                    st.session_state.books.pop(book_idx)
+                                    auto_save()
+                                    st.rerun()
     else:
         st.info("👋 No books submitted yet. Be the first to add one!")
 
