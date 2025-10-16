@@ -169,50 +169,55 @@ elif page == "View Books & Vote":
     if not is_admin:
         st.error("⛔ Access Denied: This page is only available to Phil.")
         st.stop()
-
+    
     st.markdown('<p class="main-header">📖 View Books & Cast Your Vote</p>', unsafe_allow_html=True)
-
-    # --- Load books from JSON ---
-    import json, os
-    BOOKS_PATH = os.path.join(os.path.dirname(__file__), "data", "books.json")
-
-    if os.path.exists(BOOKS_PATH):
-        with open(BOOKS_PATH, "r") as f:
-            books = json.load(f)
-    else:
-        books = []
-        print(books)
-
-    if not books:
+    
+    if not st.session_state.books:
         st.warning("📚 No books have been submitted yet. Please go to 'Submit Books' page first.")
     else:
+        # Display all books with details
         st.header("📚 Available Books")
-
-        # Display each book
-        for idx, book in enumerate(books):
+        
+        for idx, book in enumerate(st.session_state.books):
             with st.container():
                 col1, col2 = st.columns([1, 3])
-
-                # --- Left column: Book cover ---
+                
                 with col1:
-                    cover_filename = f"covers/{book['title'].replace(' ', '_')}.jpg"
-                    if os.path.exists(cover_filename):
-                        st.image(cover_filename, use_container_width=True)
+                    # Check for cover image in covers folder
+                    cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                    if os.path.exists(cover_path):
+                        st.image(cover_path, use_column_width=True)
                     else:
-                        st.image("covers/default.jpg", use_container_width=True)
-
-                # --- Right column: Book details ---
+                        # Placeholder if no cover
+                        st.markdown(f"""
+                            <div style="
+                                background-color: white;
+                                border: 1px solid #ddd;
+                                padding: 40px 20px;
+                                text-align: center;
+                                min-height: 400px;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                            ">
+                                <p style="color: black; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+                                    {book['title']}
+                                </p>
+                                <p style="color: #666; font-size: 1rem;">
+                                    {book['author']}
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                
                 with col2:
-                    st.markdown(f"### {book['title']}")
-                    st.markdown(f"**Author:** {book.get('author', 'Unknown')}")
-                    st.markdown(f"**Year of Publication:** {book.get('year', 'N/A')}")
-                    st.markdown(f"**Genre:** {book.get('genres', 'N/A')}")
-                    st.markdown(f"**Pages:** {book.get('pages', 'N/A')}")
-                    st.markdown(f"**Summary:** {book.get('summary', 'No summary available')}")
-                    if book.get('url'):
-                        st.markdown(f"[🔗 View on Goodreads]({book['url']})")
-                    st.caption(f"*Submitted by: {book.get('submitter', 'Anonymous')}*")
-
+                    st.subheader(f"{book['title']}")
+                    st.write(f"**Author:** {book['author']}")
+                    st.write(f"**Year:** {book.get('year', 'N/A')}")
+                    st.write(f"**Genre:** {book.get('genres', 'N/A')}")
+                    st.write(f"**Pages:** {book.get('pages', 'N/A')}")
+                    st.write(f"**Summary:** {book.get('summary', 'No summary available')}")
+                    st.caption(f"*Submitted by: {book['submitter']}*")
+                
                 st.divider()
         
         # Voting Section
