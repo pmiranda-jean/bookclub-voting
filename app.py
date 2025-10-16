@@ -181,6 +181,7 @@ elif page == "View Books & Vote":
             books = json.load(f)
     else:
         books = []
+        print(books)
 
     if not books:
         st.warning("📚 No books have been submitted yet. Please go to 'Submit Books' page first.")
