@@ -164,20 +164,16 @@ if page == "Submit Books":
     else:
         st.info("👋 No books submitted yet.")
 
-# ==================== PAGE 2: View Books & Vote (Phil Only) ====================
+# ==================== PAGE 2: View Books ====================
 elif page == "View Books & Vote":
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    if not is_admin:
-        st.error("⛔ Access Denied: This page is only available to Phil.")
-        st.stop()
     
-    st.markdown('<p class="main-header">📖 View Books & Cast Your Vote</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">📖 Get to know the submitted books!</p>', unsafe_allow_html=True)
     
     if not st.session_state.books:
         st.warning("📚 No books have been submitted yet. Please go to 'Submit Books' page first.")
     else:
         # Display all books with details
-        st.header("📚 Available Books")
+        st.header("📚 Submitted Books")
         
         for idx, book in enumerate(st.session_state.books):
             with st.container():
@@ -219,30 +215,38 @@ elif page == "View Books & Vote":
                     st.write(f"**Summary:** {book.get('summary', 'No summary available')}")
                 
                 st.divider()
+
+# ==================== PAGE 2: View Books ==================== 
+elif page == "Time to Vote!": 
+    if not is_admin:
+        st.error("⛔ Access Denied: This page is only available to Phil.")
+        st.stop()
+    
+    st.markdown('<p class="main-header">🗳️ Time to Vote!</p>', unsafe_allow_html=True) 
+
+    # Voting Section
+    st.header("🗳️ Cast Your Vote")
+    st.info(f"💡 Select your top {MAX_VOTES_PER_PERSON} books and distribute {TOTAL_POINTS} points among them. Give more points to your favorites!")
         
-        # Voting Section
-        st.header("🗳️ Cast Your Vote")
-        st.info(f"💡 Select your top {MAX_VOTES_PER_PERSON} books and distribute {TOTAL_POINTS} points among them. Give more points to your favorites!")
-        
-        with st.form("voting_form"):
-            voter_name = st.text_input("Your Name *", placeholder="Enter your name")
+    with st.form("voting_form"):
+        voter_name = st.text_input("Your Name *", placeholder="Enter your name")
             
-            st.write(f"**Select {MAX_VOTES_PER_PERSON} books and allocate {TOTAL_POINTS} points total**")
+    st.write(f"**Select {MAX_VOTES_PER_PERSON} books and allocate {TOTAL_POINTS} points total**")
             
-            available_books = [(i, f"{book['title']} by {book['author']}") 
+    available_books = [(i, f"{book['title']} by {book['author']}") 
                              for i, book in enumerate(st.session_state.books)]
             
-            votes = []
-            points = []
+    votes = []
+    points = []
             
-            for i in range(MAX_VOTES_PER_PERSON):
-                col1, col2 = st.columns([3, 1])
+    for i in range(MAX_VOTES_PER_PERSON):
+            col1, col2 = st.columns([3, 1])
                 
-                with col1:
-                    filtered_books = [b for b in available_books 
+            with col1:
+                filtered_books = [b for b in available_books 
                                     if b[0] not in votes]
                     
-                    if filtered_books:
+                if filtered_books:
                         selected = st.selectbox(
                             f"Choice {i+1} *",
                             options=[b[0] for b in filtered_books],
