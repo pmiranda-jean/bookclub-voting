@@ -80,7 +80,7 @@ is_admin = st.session_state.current_user == "Phil"
 if is_admin:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!", "Results", "🔧 Debug"])
 else:
-    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books",])
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books"])
     #st.sidebar.info("📌 You are on the Submit Books page")
 
 # ==================== PAGE 1: SUBMIT BOOKS ====================
@@ -492,7 +492,7 @@ with st.sidebar:
     
     # Stats
     st.metric("📚 Books", len(st.session_state.books))
-    st.metric("🗳️ Votes", len(st.session_state.votes))
+    #st.metric("🗳️ Votes", len(st.session_state.votes))
     
     st.divider()
     
