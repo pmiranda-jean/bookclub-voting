@@ -217,7 +217,6 @@ elif page == "View Books & Vote":
                     st.write(f"**Genre:** {book.get('genres', 'N/A')}")
                     st.write(f"**Pages:** {book.get('pages', 'N/A')}")
                     st.write(f"**Summary:** {book.get('summary', 'No summary available')}")
-                    st.caption(f"*Submitted by: {book['submitter']}*")
                 
                 st.divider()
         
