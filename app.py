@@ -187,7 +187,7 @@ elif page == "View Books & Vote":
                     # Check for cover image in covers folder
                     cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
                     if os.path.exists(cover_path):
-                        st.image(cover_path, use_column_width=True)
+                        st.image(cover_path, use_container_width=True)
                     else:
                         # Placeholder if no cover
                         st.markdown(f"""
