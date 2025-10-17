@@ -165,7 +165,7 @@ if page == "Submit Books":
         st.info("👋 No books submitted yet.")
 
 # ==================== PAGE 2: View Books ====================
-elif page == "View Books & Vote":
+elif page == "View Books":
     
     st.markdown('<p class="main-header">📖 Get to know the submitted books!</p>', unsafe_allow_html=True)
     
