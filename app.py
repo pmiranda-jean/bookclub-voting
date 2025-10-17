@@ -166,6 +166,7 @@ if page == "Submit Books":
 
 # ==================== PAGE 2: View Books & Vote (Phil Only) ====================
 elif page == "View Books & Vote":
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     if not is_admin:
         st.error("⛔ Access Denied: This page is only available to Phil.")
         st.stop()
