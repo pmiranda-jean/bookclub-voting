@@ -86,7 +86,7 @@ else:
 # ==================== PAGE 1: SUBMIT BOOKS ====================
 if page == "Submit Books":
     user = st.session_state.current_user
-    st.markdown(f'<p class="main-header">📚 {user}, Submit Your Book Choice,! </p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="main-header">📚 {user}, Submit Your Book Choice! </p>', unsafe_allow_html=True)
 
     user_books = [b for b in st.session_state.books if b["submitter"] == user]
     can_submit = len(user_books) < 5
@@ -166,6 +166,7 @@ if page == "Submit Books":
 
 # ==================== PAGE 2: View Books ====================
 elif page == "View Books":
+    user = st.session_state.current_user
     
     st.markdown('<p class="main-header">📖 Get to know the submitted books!</p>', unsafe_allow_html=True)
     
