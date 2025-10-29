@@ -301,88 +301,92 @@ elif page == "Time to Vote!":
                             st.balloons()
                             st.rerun()
 
-
-# ==================== PAGE 3: Results (Phil Only) ====================
-elif page == "Results":
+# ==================== PAGE 3: Time to Vote! ==================== 
+elif page == "Time to Vote!": 
     if not is_admin:
         st.error("⛔ Access Denied: This page is only available to Phil.")
         st.stop()
     
-    st.markdown('<p class="main-header">🏆 Voting Results</p>', unsafe_allow_html=True)
-    
-    if not st.session_state.votes:
-        st.warning("🗳️ No votes have been cast yet.")
+    st.markdown('<p class="main-header">🗳️ Time to Vote!</p>', unsafe_allow_html=True) 
+
+    if not st.session_state.books:
+        st.warning("📚 No books have been submitted yet.")
     else:
-        book_scores = calculate_scores(st.session_state.votes)
-        sorted_books = sorted(book_scores.items(), key=lambda x: x[1], reverse=True)
-        
-        # Display statistics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("📚 Total Books", len(st.session_state.books))
-        with col2:
-            st.metric("🗳️ Total Votes", len(st.session_state.votes))
-        with col3:
-            st.metric("👥 Participation", f"{len(st.session_state.votes)}/{len(st.session_state.books)}")
-        
-        st.divider()
-        
-        # Display top books
-        st.header(f"🏆 Top {TOP_BOOKS_TO_DISPLAY} Books")
-        
-        for rank, (book_idx, total_points) in enumerate(sorted_books[:TOP_BOOKS_TO_DISPLAY], 1):
-            book = st.session_state.books[book_idx]
+        # Voting Section
+        st.header("🗳️ Cast Your Vote")
+        st.info(f"💡 Select your top {MAX_VOTES_PER_PERSON} books and distribute {TOTAL_POINTS} points among them. Give more points to your favorites!")
             
-            # Medal emojis for top 3
-            medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(rank, f"#{rank}")
-            
-            with st.container():
-                col1, col2 = st.columns([1, 4])
+        with st.form("voting_form"):
+            voter_name = st.text_input("Your Name *", placeholder="Enter your name")
                 
+            st.write(f"**Select {MAX_VOTES_PER_PERSON} books and allocate {TOTAL_POINTS} points total**")
+                
+            available_books = [(i, f"{book['title']} by {book['author']}") 
+                                for i, book in enumerate(st.session_state.books)]
+                
+            votes = []
+            points = []
+                
+            for i in range(MAX_VOTES_PER_PERSON):
+                col1, col2 = st.columns([3, 1])
+                    
                 with col1:
-                    st.markdown(f"### {medal}")
-                    if book.get('image_url'):
-                        st.image(book['image_url'], use_container_width=True)
-                
+                    filtered_books = [b for b in available_books 
+                                        if b[0] not in votes]
+                        
+                    if filtered_books:
+                        selected = st.selectbox(
+                            f"Choice {i+1} *",
+                            options=[b[0] for b in filtered_books],
+                            format_func=lambda x: next(b[1] for b in filtered_books if b[0] == x),
+                            key=f"book_{i}"
+                        )
+                        votes.append(selected)
+                        
                 with col2:
-                    st.subheader(f"{book['title']}")
-                    st.write(f"**Author:** {book['author']}")
-                    st.write(f"**Total Points:** {total_points} 🌟")
-                    
-                    info_col1, info_col2 = st.columns(2)
-                    with info_col1:
-                        st.write(f"📄 **Pages:** {book.get('pages', 'N/A')}")
-                    with info_col2:
-                        st.write(f"🏷️ **Genre:** {book.get('genres', 'N/A')}")
-                    
-                    # Show vote breakdown
-                    votes_for_book = [(v['voter'], next(p for idx, p in v['votes'] if idx == book_idx)) 
-                                     for v in st.session_state.votes 
-                                     if book_idx in [idx for idx, p in v['votes']]]
-                    
-                    with st.expander("👥 See vote breakdown"):
-                        for voter, pts in sorted(votes_for_book, key=lambda x: x[1], reverse=True):
-                            st.write(f"• **{voter}**: {pts} points")
+                    point = st.number_input(
+                        f"Points *",
+                        min_value=0,
+                        max_value=TOTAL_POINTS,
+                        value=0,
+                        key=f"points_{i}",
+                        help=f"Allocate points (total must equal {TOTAL_POINTS})"
+                    )
+                    points.append(point)
                 
-                st.divider()
-        
-        # Display all results in table
-        with st.expander("📊 See complete rankings"):
-            df_results = []
-            for rank, (book_idx, total_points) in enumerate(sorted_books, 1):
-                book = st.session_state.books[book_idx]
-                vote_count = len([v for v in st.session_state.votes 
-                                 if book_idx in [idx for idx, p in v['votes']]])
-                df_results.append({
-                    'Rank': rank,
-                    'Title': book['title'],
-                    'Author': book['author'],
-                    'Points': total_points,
-                    'Votes': vote_count,
-                    'Submitter': book['submitter']
-                })
-            
-            st.dataframe(pd.DataFrame(df_results), use_container_width=True, hide_index=True)
+            # Show current point total
+            current_total = sum(points)
+            if current_total == TOTAL_POINTS:
+                st.success(f"✅ Point allocation: {current_total}/{TOTAL_POINTS}")
+            else:
+                st.warning(f"⚠️ Point allocation: {current_total}/{TOTAL_POINTS}")
+                
+            submitted_vote = st.form_submit_button("🗳️ Submit Vote", use_container_width=True)
+                
+            if submitted_vote:
+                if not voter_name:
+                    st.error("❌ Please enter your name")
+                elif sum(points) != TOTAL_POINTS:
+                    st.error(f"❌ Points must total {TOTAL_POINTS}. Current total: {sum(points)}")
+                elif len(set(votes)) != MAX_VOTES_PER_PERSON:
+                    st.error(f"❌ Please select {MAX_VOTES_PER_PERSON} different books")
+                elif 0 in points:
+                    st.error("❌ All choices must have at least 1 point")
+                else:
+                    if has_voted(st.session_state.votes, voter_name):
+                        st.warning("⚠️ You have already voted! Contact admin to reset your vote.")
+                    else:
+                        user_submission = next((i for i, b in enumerate(st.session_state.books) 
+                                                if b['submitter'].lower() == voter_name.lower()), None)
+                            
+                        if user_submission in votes:
+                            st.error("❌ You cannot vote for your own submission!")
+                        else:
+                            add_vote(st.session_state.votes, voter_name, list(zip(votes, points)))
+                            auto_save()
+                            st.success("✅ Your vote has been recorded!")
+                            st.balloons()
+                            st.rerun()
 
 # ==================== PAGE 4: Debug (Phil Only) ====================
 elif page == "🔧 Debug":
