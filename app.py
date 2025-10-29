@@ -78,7 +78,7 @@ is_admin = st.session_state.current_user == "Phil"
 
 # ==================== NAVIGATION ====================
 if is_admin:
-    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!", "Results", "🔧 Debug"])
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!", "Results", "Scraper","🔧 Debug"])
 else:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books"])
     #st.sidebar.info("📌 You are on the Submit Books page")
@@ -387,6 +387,200 @@ elif page == "Time to Vote!":
                             st.success("✅ Your vote has been recorded!")
                             st.balloons()
                             st.rerun()
+
+# ==================== PAGE: Scraper (Phil Only) ====================
+elif page == "Scraper":
+    if not is_admin:
+        st.error("⛔ Access Denied: This page is only available to Phil.")
+        st.stop()
+    
+    st.markdown('<p class="main-header">🔍 Goodreads Shelf Scraper</p>', unsafe_allow_html=True)
+    
+    st.info("💡 Add all submitted books to a Goodreads shelf, then scrape the data here to auto-populate book details!")
+    
+    # Instructions
+    with st.expander("📖 How to use this scraper"):
+        st.markdown("""
+        ### Steps:
+        1. Go to [Goodreads](https://www.goodreads.com) and log in
+        2. Go to "My Books" → Select or create a shelf (e.g., "bookclub2026nominees")
+        3. Add all submitted books to that shelf
+        4. Copy the shelf URL (it looks like: `https://www.goodreads.com/review/list/YOUR_ID?shelf=SHELF_NAME`)
+        5. Paste it below and click "Scrape Shelf"
+        6. Review the data and click "Update Books" to apply
+        
+        ### What this scrapes:
+        - ✅ Title & Author
+        - ✅ Cover image (high resolution)
+        - ✅ Publication year
+        - ✅ Number of pages
+        - ✅ Average rating
+        - ✅ Summary & genres (from individual book pages)
+        """)
+    
+    st.divider()
+    
+    # Scraper UI
+    st.header("🔍 Scrape Goodreads Shelf")
+    
+    shelf_url = st.text_input(
+        "Goodreads Shelf URL *",
+        placeholder="https://www.goodreads.com/review/list/121203593-philippe?shelf=bookclub2026nominees",
+        help="Get this from your Goodreads shelf page"
+    )
+    
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
+        scrape_details = st.checkbox("Include summaries & genres", value=True, 
+                                     help="Takes longer (~1 sec per book)")
+    
+    with col2:
+        if st.button("🔍 Scrape Shelf", use_container_width=True, type="primary"):
+            if not shelf_url:
+                st.error("❌ Please enter a shelf URL")
+            else:
+                try:
+                    from utils.goodreads_scraper import scrape_goodreads_shelf, enrich_books_with_details
+                    
+                    with st.spinner("🔍 Scraping Goodreads shelf..."):
+                        books_data = scrape_goodreads_shelf(shelf_url)
+                        
+                        if books_data:
+                            st.success(f"✅ Found {len(books_data)} books on shelf!")
+                            
+                            if scrape_details:
+                                with st.spinner(f"📚 Getting detailed info for {len(books_data)} books... (this may take a minute)"):
+                                    books_data = enrich_books_with_details(books_data)
+                                st.success("✅ Enriched with summaries and genres!")
+                            
+                            # Store in session state for review
+                            st.session_state.scraped_books = books_data
+                            st.rerun()
+                        else:
+                            st.error("❌ No books found. Check your shelf URL.")
+                
+                except ImportError:
+                    st.error("❌ Scraper module not found. Make sure `utils/goodreads_scraper.py` exists.")
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+                    st.code(str(e))
+    
+    st.divider()
+    
+    # Display scraped data if available
+    if 'scraped_books' in st.session_state and st.session_state.scraped_books:
+        scraped_books = st.session_state.scraped_books
+        
+        st.header(f"📚 Scraped Data ({len(scraped_books)} books)")
+        
+        # Show preview
+        for i, book in enumerate(scraped_books):
+            with st.expander(f"📖 {book.get('title', 'Unknown')} by {book.get('author', 'Unknown')}"):
+                col1, col2 = st.columns([1, 3])
+                
+                with col1:
+                    if book.get('image_url'):
+                        st.image(book['image_url'], width=150)
+                    else:
+                        st.write("📘 No image")
+                
+                with col2:
+                    st.write(f"**Title:** {book.get('title', 'N/A')}")
+                    st.write(f"**Author:** {book.get('author', 'N/A')}")
+                    st.write(f"**Year:** {book.get('year', 'N/A')}")
+                    st.write(f"**Pages:** {book.get('pages', 'N/A')}")
+                    st.write(f"**Rating:** {book.get('rating', 'N/A')} ⭐")
+                    st.write(f"**Genres:** {book.get('genres', 'N/A')}")
+                    st.write(f"**Summary:** {book.get('summary', 'No summary available')[:200]}...")
+        
+        st.divider()
+        
+        # Match with existing books
+        st.header("🔗 Match with Submitted Books")
+        
+        st.info("Match scraped data with books already submitted to the book club")
+        
+        # Create matching interface
+        matched_books = []
+        
+        for scraped_book in scraped_books:
+            st.subheader(f"📖 {scraped_book.get('title')} by {scraped_book.get('author')}")
+            
+            # Find potential matches in existing books
+            potential_matches = []
+            for idx, existing_book in enumerate(st.session_state.books):
+                # Simple matching by title similarity
+                if (scraped_book.get('title', '').lower() in existing_book['title'].lower() or
+                    existing_book['title'].lower() in scraped_book.get('title', '').lower()):
+                    potential_matches.append((idx, existing_book))
+            
+            if potential_matches:
+                match_options = ["Don't update"] + [f"{b['title']} by {b['author']} (submitted by {b['submitter']})" 
+                                                     for _, b in potential_matches]
+                
+                selected = st.selectbox(
+                    "Match with existing book:",
+                    options=range(len(match_options)),
+                    format_func=lambda x: match_options[x],
+                    key=f"match_{scraped_book.get('title')}"
+                )
+                
+                if selected > 0:
+                    book_idx = potential_matches[selected - 1][0]
+                    matched_books.append((book_idx, scraped_book))
+            else:
+                st.warning("⚠️ No matching book found in submitted books")
+            
+            st.divider()
+        
+        # Apply updates
+        if matched_books:
+            st.header("💾 Apply Updates")
+            
+            st.write(f"**Ready to update {len(matched_books)} books**")
+            
+            if st.button("✅ Update Books with Scraped Data", type="primary", use_container_width=True):
+                for book_idx, scraped_data in matched_books:
+                    # Update existing book with scraped data
+                    st.session_state.books[book_idx].update({
+                        'year': scraped_data.get('year', 'N/A'),
+                        'pages': scraped_data.get('pages', 'N/A'),
+                        'genres': scraped_data.get('genres', 'N/A'),
+                        'summary': scraped_data.get('summary', 'No summary available'),
+                        'image_url': scraped_data.get('image_url'),
+                        'rating': scraped_data.get('rating'),
+                        'url': scraped_data.get('url')
+                    })
+                
+                # Save to GitHub
+                auto_save()
+                
+                # Clear scraped data
+                del st.session_state.scraped_books
+                
+                st.success(f"✅ Successfully updated {len(matched_books)} books!")
+                st.balloons()
+                st.rerun()
+        
+        # Download as JSON
+        st.divider()
+        st.header("📥 Download Scraped Data")
+        
+        import json
+        json_data = json.dumps(scraped_books, indent=2, ensure_ascii=False)
+        
+        st.download_button(
+            "⬇️ Download as JSON",
+            data=json_data,
+            file_name="goodreads_scraped_books.json",
+            mime="application/json",
+            use_container_width=True
+        )
+        
+        if st.button("🗑️ Clear Scraped Data", use_container_width=True):
+            del st.session_state.scraped_books
+            st.rerun()
 
 # ==================== PAGE 4: Debug (Phil Only) ====================
 elif page == "🔧 Debug":
