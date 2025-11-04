@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-USER_LIST = ["Gab", "Nonna", "Phil", "Silvia", "Kathy", "Val"]
+USER_LIST = ["Gab", "Grace", "Phil", "Silvia", "Kathy", "Val"]
 
 # ==================== LOGIN ====================
 if "current_user" not in st.session_state:
