@@ -80,7 +80,7 @@ is_admin = st.session_state.current_user == "Phil"
 if is_admin:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!!", "Results"])
 else:
-    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books"])
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books"])
     #st.sidebar.info("📌 You are on the Submit Books page")
 
 # ==================== PAGE 1: SUBMIT BOOKS ====================
@@ -177,8 +177,12 @@ elif page == "View Books":
     else:
         # Display all books with details
         st.header("📚 Submitted Books")
+
+        sorted_books = sorted(
+            st.session_state.books, 
+            key=lambda book: (book["author"].split(" ",1)[1]))
         
-        for idx, book in enumerate(st.session_state.books):
+        for idx, book in enumerate(sorted_books):
             with st.container():
                 col1, col2 = st.columns([1, 3])
                 
