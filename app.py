@@ -78,7 +78,7 @@ is_admin = st.session_state.current_user == "Phil"
 
 # ==================== NAVIGATION ====================
 if is_admin:
-    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!", "Results"])
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!!", "Results"])
 else:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books"])
     #st.sidebar.info("📌 You are on the Submit Books page")
