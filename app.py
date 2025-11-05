@@ -225,9 +225,6 @@ elif page == "View Books":
                 st.divider()
 # ==================== PAGE 3: Time to Vote! ==================== 
 elif page == "Time to Vote!!": 
-    if not is_admin:
-        st.error("⛔ Access Denied: This page is only available to Phil.")
-        st.stop()
     
     st.markdown('<p class="main-header">🗳️ Time to Vote!</p>', unsafe_allow_html=True) 
 
