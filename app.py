@@ -357,6 +357,127 @@ elif page == "Time to Vote!!":
                         st.balloons()
                         st.rerun()
 
+# ==================== Page 4: Results ==================== 
+elif page == "Results":
+    st.markdown('<p class="main-header">🏆 Final Results</p>', unsafe_allow_html=True)
+
+    if not st.session_state.books:
+        st.warning("📚 No books have been submitted yet.")
+        st.stop()
+
+    if not st.session_state.votes:
+        st.warning("🗳️ No votes have been submitted yet.")
+        st.stop()
+
+    books = st.session_state.books
+    votes = st.session_state.votes
+
+    # 1️⃣ Initialize vote tracking for each book
+    book_scores = {book["title"]: 0 for book in books}
+    book_voters = {book["title"]: [] for book in books}
+
+    # 2️⃣ Aggregate votes
+    for vote_entry in votes:
+        voter_name = vote_entry["voter"]
+        for v in vote_entry["votes"]:
+            title = v["book_title"]
+            points = v["points"]
+            if title in book_scores:
+                book_scores[title] += points
+                book_voters[title].append({"voter": voter_name, "points": points})
+
+    # 3️⃣ Merge totals into books
+    for book in books:
+        book["total_points"] = book_scores.get(book["title"], 0)
+        book["voters"] = book_voters.get(book["title"], [])
+
+    # 4️⃣ Sort by total points (descending)
+    ranked_books = sorted(books, key=lambda b: b["total_points"], reverse=True)
+
+    # 5️⃣ Display Rankings
+    st.header("📚 Book Rankings")
+    for idx, book in enumerate(ranked_books, start=1):
+        is_top6 = idx <= 6
+        border_color = "#FFD700" if is_top6 else "#ddd"  # gold for top 6
+        bg_color = "#fff9e6" if is_top6 else "white"
+
+        with st.container():
+            st.markdown(f"""
+                <div style="
+                    border: 3px solid {border_color};
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 25px;
+                    background-color: {bg_color};
+                ">
+                    <h3 style="margin-bottom: 5px;">
+                        #{idx} – {book['title']} 
+                        <span style="color: #666;">by {book['author']}</span>
+                    </h3>
+                    <p><b>Submitted by:</b> {book['submitter']}</p>
+                    <p><b>Total Points:</b> {book['total_points']}</p>
+            """, unsafe_allow_html=True)
+
+            # Cover or placeholder
+            cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+            if os.path.exists(cover_path):
+                st.image(cover_path, width=200)
+            else:
+                st.markdown(f"""
+                    <div style="
+                        background-color: white;
+                        border: 1px solid #ddd;
+                        padding: 20px;
+                        text-align: center;
+                        width: 200px;
+                        margin-bottom: 10px;
+                    ">
+                        <p style="font-weight: bold;">{book['title']}</p>
+                        <p style="color: #666;">{book['author']}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            # Voters
+            st.write("### 🗳️ Votes Received:")
+            if book["voters"]:
+                for v in sorted(book["voters"], key=lambda x: x["points"], reverse=True):
+                    st.write(f"- {v['voter']} gave **{v['points']} points**")
+            else:
+                st.write("_No votes yet_")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # 6️⃣ Fun Stats
+    st.divider()
+    st.header("🎉 Fun Stats")
+
+    # 🏅 Top Submitter
+    submitter_totals = {}
+    for book in books:
+        submitter_totals[book["submitter"]] = submitter_totals.get(book["submitter"], 0) + book["total_points"]
+
+    top_submitter = max(submitter_totals, key=submitter_totals.get)
+    st.write(f"🏅 **Top Submitter:** {top_submitter} — {submitter_totals[top_submitter]} total points received")
+
+    # 🤓 Best Voter — voted for most Top 6 books
+    top6_titles = [b["title"] for b in ranked_books[:6]]
+    voter_counts = {}
+
+    for vote_entry in votes:
+        voter = vote_entry["voter"]
+        count_top6 = sum(1 for v in vote_entry["votes"] if v["book_title"] in top6_titles and v["points"] > 0)
+        if count_top6 > 0:
+            voter_counts[voter] = count_top6
+
+    if voter_counts:
+        best_voter = max(voter_counts, key=voter_counts.get)
+        st.write(f"🤓 **Best Voter:** {best_voter} — voted for {voter_counts[best_voter]} of the Top 6 books!")
+    else:
+        st.write("No top-6 votes recorded yet.")
+
+    st.divider()
+    st.success("🌟 The Top 6 books above are the final selections!")                     
+
 # ==================== SIDEBAR: Data Management ====================
 with st.sidebar:
     st.divider()
