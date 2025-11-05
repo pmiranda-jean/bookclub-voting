@@ -121,20 +121,21 @@ if page == "Submit Books":
     st.divider()
 
     # ==================== DISPLAY BOOKS ====================
-    
-    if st.session_state.books:
+    user_books = [book for book in st.session_state.books if book["submitter"] == user]
+
+    if user_books: 
         st.subheader(f"📚 Your Submitted Books")
 
         if 'selected_book' not in st.session_state:
             st.session_state.selected_book = {}
 
-        for row_start in range(0, len(st.session_state.books), 3):
+        for row_start in range(0, len(user_books), 3):
             cols = st.columns(3)
             for col_idx, col in enumerate(cols):
                 book_idx = row_start + col_idx
-                if book_idx >= len(st.session_state.books):
+                if book_idx >= len(user_books):
                     continue
-                book = st.session_state.books[book_idx]
+                book = user_books[book_idx]
                 is_selected = st.session_state.selected_book.get(book_idx, False)
 
                 with col:
@@ -168,7 +169,6 @@ if page == "Submit Books":
 # ==================== PAGE 2: View Books ====================
 elif page == "View Books":
     user = st.session_state.current_user
-    book = [b for b in st.session_state.books if b["submitter"] == user]
     
     st.markdown('<p class="main-header">📖 Get to know the submitted books!</p>', unsafe_allow_html=True)
     
