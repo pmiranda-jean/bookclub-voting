@@ -121,8 +121,9 @@ if page == "Submit Books":
     st.divider()
 
     # ==================== DISPLAY BOOKS ====================
+    
     if st.session_state.books:
-        st.subheader(f"📚 Submitted Books")
+        st.subheader(f"📚 Your Submitted Books")
 
         if 'selected_book' not in st.session_state:
             st.session_state.selected_book = {}
@@ -167,6 +168,7 @@ if page == "Submit Books":
 # ==================== PAGE 2: View Books ====================
 elif page == "View Books":
     user = st.session_state.current_user
+    book = [b for b in st.session_state.books if b["submitter"] == user]
     
     st.markdown('<p class="main-header">📖 Get to know the submitted books!</p>', unsafe_allow_html=True)
     
@@ -213,6 +215,7 @@ elif page == "View Books":
                     st.write(f"**Year:** {book.get('year', 'N/A')}")
                     st.write(f"**Genre:** {book.get('genres', 'N/A')}")
                     st.write(f"**Pages:** {book.get('pages', 'N/A')}")
+                    st.write(f"**Link:** {book.get('url', 'N/A')}")
                     st.write(f"**Summary:** {book.get('summary', 'No summary available')}")
                 
                 st.divider()
