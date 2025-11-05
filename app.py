@@ -358,7 +358,6 @@ elif page == "Time to Vote!!":
                         st.rerun()
 
 # ==================== Page 4: Results ==================== 
-# ==================== Page 4: Results ==================== 
 elif page == "Results":
     st.markdown('<p class="main-header">🏆 Final Results</p>', unsafe_allow_html=True)
 
