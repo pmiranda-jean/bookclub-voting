@@ -264,13 +264,11 @@ elif page == "Results":
     ranked_books = sorted(voted_books, key=lambda b: b["total_points"], reverse=True)
 
     st.header("📊 Results Overview")
-    st.write(f"- 🏆 **{len(ranked_books)}** books received votes")
-    st.write(f"- 😢 **{len(unvoted_books)}** books received none")
+    st.write(f"- **{len(unvoted_books)}** books received no votes,")
 
     # 6️⃣ "Received No Votes" section
     if unvoted_books:
-        with st.expander("📕 Received No Votes"):
-            st.markdown("These books sadly received no love this round 😢")
+        with st.expander("Received No Votes"):
             cols = st.columns(4)
             for i, book in enumerate(unvoted_books):
                 with cols[i % 4]:
@@ -293,14 +291,13 @@ elif page == "Results":
                         """, unsafe_allow_html=True)
 
     # 7️⃣ Ranked books (lowest → highest)
-    st.header("🏅 Ranked Books (from lowest to highest)")
     for idx, book in enumerate(reversed(ranked_books), start=1):  # lowest first
         rank = len(ranked_books) - idx + 1  # actual rank
         is_top6 = rank <= 6
         border_color = "#FFD700" if is_top6 else "#ddd"
         bg_color = "#fff9e6" if is_top6 else "white"
 
-        with st.expander(f"#{rank} – {book['title']} ({book['total_points']} pts)"):
+        with st.expander(f"#{rank}"):
             st.markdown(f"""
                 <div style="
                     border: 3px solid {border_color};
