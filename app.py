@@ -244,10 +244,14 @@ elif page == "Time to Vote!!":
         if has_voted(st.session_state.votes, voter_name):
             st.warning("⚠️ You have already voted! Contact Phil if you need to change your vote.")
             st.stop()
+
+        sorted_books = sorted(
+            st.session_state.books, 
+            key=lambda book: (book["author"].split(" ",1)[1]))
         
         # Filter out user's own submissions
         available_books = [
-            (idx, book) for idx, book in enumerate(st.session_state.books)
+            (idx, book) for idx, book in enumerate(sorted_books)
             if book['submitter'] != voter_name
         ]
         
