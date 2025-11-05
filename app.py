@@ -358,6 +358,7 @@ elif page == "Time to Vote!!":
                         st.rerun()
 
 # ==================== Page 4: Results ==================== 
+# ==================== Page 4: Results ==================== 
 elif page == "Results":
     st.markdown('<p class="main-header">🏆 Final Results</p>', unsafe_allow_html=True)
 
@@ -379,12 +380,11 @@ elif page == "Results":
     # 2️⃣ Aggregate votes
     for vote_entry in votes:
         voter_name = vote_entry["voter"]
-        for v in vote_entry["votes"]:
-            title = v["book_title"]
-            points = v["points"]
-            if title in book_scores:
-                book_scores[title] += points
-                book_voters[title].append({"voter": voter_name, "points": points})
+        for book_index, points in vote_entry["votes"]:
+            if 0 <= book_index < len(books):
+                book = books[book_index]
+                book_scores[book["title"]] += points
+                book_voters[book["title"]].append({"voter": voter_name, "points": points})
 
     # 3️⃣ Merge totals into books
     for book in books:
@@ -465,7 +465,10 @@ elif page == "Results":
 
     for vote_entry in votes:
         voter = vote_entry["voter"]
-        count_top6 = sum(1 for v in vote_entry["votes"] if v["book_title"] in top6_titles and v["points"] > 0)
+        count_top6 = sum(
+            1 for (book_index, _) in vote_entry["votes"]
+            if books[book_index]["title"] in top6_titles
+        )
         if count_top6 > 0:
             voter_counts[voter] = count_top6
 
@@ -476,7 +479,7 @@ elif page == "Results":
         st.write("No top-6 votes recorded yet.")
 
     st.divider()
-    st.success("🌟 The Top 6 books above are the final selections!")                     
+    st.success("🌟 The Top 6 books above are the final selections!")                    
 
 # ==================== SIDEBAR: Data Management ====================
 with st.sidebar:
