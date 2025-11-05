@@ -302,7 +302,7 @@ elif page == "Time to Vote!":
                             st.rerun()
 
 # ==================== PAGE 3: Time to Vote! ==================== 
-elif page == "Time to Vote!": 
+elif page == "Time to Vote!!": 
     if not is_admin:
         st.error("⛔ Access Denied: This page is only available to Phil.")
         st.stop()
