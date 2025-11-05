@@ -248,108 +248,90 @@ elif page == "Time to Vote!!":
             st.error("❌ No books available to vote on (you've submitted all books!)")
             st.stop()
         
-        # Initialize vote points in session state
-        if 'vote_points' not in st.session_state:
-            st.session_state.vote_points = {idx: 0 for idx, _ in available_books}
-        
-        # Calculate remaining points
-        total_allocated = sum(st.session_state.vote_points.values())
-        remaining_points = TOTAL_POINTS - total_allocated
-        
-        # Display point counter
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            st.metric("Total Points", TOTAL_POINTS)
-        with col2:
-            st.metric("Allocated", total_allocated)
-        with col3:
-            if remaining_points == 0:
-                st.metric("Remaining", remaining_points, delta="✓ Ready!")
-            elif remaining_points < 0:
-                st.metric("Remaining", remaining_points, delta="⚠️ Too many!")
-            else:
-                st.metric("Remaining", remaining_points)
-        
         st.divider()
         
         # Display books in 5-column grid
         st.header("📚 Cast Your Votes")
         
-        num_cols = 5
-        num_books = len(available_books)
-        
-        for row_start in range(0, num_books, num_cols):
-            cols = st.columns(num_cols)
+        # Use a form to batch all inputs together
+        with st.form("voting_grid_form"):
+            vote_points = {}
             
-            for col_idx, col in enumerate(cols):
-                book_idx_in_list = row_start + col_idx
+            num_cols = 5
+            num_books = len(available_books)
+            
+            for row_start in range(0, num_books, num_cols):
+                cols = st.columns(num_cols)
                 
-                if book_idx_in_list < num_books:
-                    original_idx, book = available_books[book_idx_in_list]
+                for col_idx, col in enumerate(cols):
+                    book_idx_in_list = row_start + col_idx
                     
-                    with col:
-                        # Display cover
-                        cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
-                        if os.path.exists(cover_path):
-                            st.image(cover_path, use_column_width=True)
-                        else:
-                            # Placeholder
-                            st.markdown(f"""
-                                <div style="
-                                    background-color: white;
-                                    border: 1px solid #ddd;
-                                    padding: 30px 10px;
-                                    text-align: center;
-                                    min-height: 250px;
-                                    display: flex;
-                                    flex-direction: column;
-                                    justify-content: center;
-                                ">
-                                    <p style="font-weight: bold; font-size: 0.9rem; margin: 0;">
-                                        {book['title']}
-                                    </p>
-                                    <p style="color: #666; font-size: 0.8rem; margin-top: 5px;">
-                                        {book['author']}
-                                    </p>
-                                </div>
-                            """, unsafe_allow_html=True)
+                    if book_idx_in_list < num_books:
+                        original_idx, book = available_books[book_idx_in_list]
                         
-                        # Title and author
-                        st.markdown(f"**{book['title']}**")
-                        st.caption(f"by {book['author']}")
-                        
-                        # Point input
-                        current_points = st.session_state.vote_points.get(original_idx, 0)
-                        
-                        new_points = st.number_input(
-                            "Points",
-                            min_value=0,
-                            max_value=TOTAL_POINTS,
-                            value=current_points,
-                            step=1,
-                            key=f"vote_input_{original_idx}",
-                            label_visibility="collapsed"
-                        )
-                        
-                        # Update session state
-                        st.session_state.vote_points[original_idx] = new_points
-        
-        st.divider()
-        
-        # Submit button
-        col1, col2, col3 = st.columns([1, 1, 1])
-        
-        with col2:
-            if st.button("🗳️ Submit Vote", use_container_width=True, type="primary"):
-                # Validate
-                total_allocated = sum(st.session_state.vote_points.values())
+                        with col:
+                            # Display cover
+                            cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                            if os.path.exists(cover_path):
+                                st.image(cover_path, use_column_width=True)
+                            else:
+                                # Placeholder
+                                st.markdown(f"""
+                                    <div style="
+                                        background-color: white;
+                                        border: 1px solid #ddd;
+                                        padding: 30px 10px;
+                                        text-align: center;
+                                        min-height: 250px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        justify-content: center;
+                                    ">
+                                        <p style="font-weight: bold; font-size: 0.9rem; margin: 0;">
+                                            {book['title']}
+                                        </p>
+                                        <p style="color: #666; font-size: 0.8rem; margin-top: 5px;">
+                                            {book['author']}
+                                        </p>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            
+                            # Title and author
+                            st.markdown(f"**{book['title']}**")
+                            st.caption(f"by {book['author']}")
+                            
+                            # Point dropdown (0-50)
+                            points = st.selectbox(
+                                "Points",
+                                options=list(range(0, 51)),
+                                index=0,
+                                key=f"vote_select_{original_idx}",
+                                label_visibility="collapsed"
+                            )
+                            
+                            vote_points[original_idx] = points
+            
+            st.divider()
+            
+            # Submit button
+            col1, col2, col3 = st.columns([1, 1, 1])
+            
+            with col2:
+                submitted = st.form_submit_button("🗳️ Submit Vote", use_container_width=True, type="primary")
+            
+            if submitted:
+                # Calculate total
+                total_allocated = sum(vote_points.values())
+                
+                # Display current allocation
+                st.write(f"**Points allocated:** {total_allocated} / {TOTAL_POINTS}")
                 
                 if total_allocated != TOTAL_POINTS:
                     st.error(f"❌ You must allocate exactly {TOTAL_POINTS} points. Currently allocated: {total_allocated}")
                 else:
                     # Get books with points > 0
                     votes_to_submit = [
-                        (idx, points) for idx, points in st.session_state.vote_points.items()
+                        (idx, points) for idx, points in vote_points.items()
                         if points > 0
                     ]
                     
@@ -359,9 +341,6 @@ elif page == "Time to Vote!!":
                         # Save vote
                         add_vote(st.session_state.votes, voter_name, votes_to_submit)
                         auto_save()
-                        
-                        # Clear vote points
-                        del st.session_state.vote_points
                         
                         st.success("✅ Your vote has been recorded!")
                         st.balloons()
