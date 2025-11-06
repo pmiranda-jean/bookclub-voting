@@ -238,11 +238,9 @@ elif page == "Results":
     books = st.session_state.books
     votes = st.session_state.votes
 
-    # 1️⃣ Initialize vote tracking for each book
     book_scores = {book["title"]: 0 for book in books}
     book_voters = {book["title"]: [] for book in books}
 
-    # 2️⃣ Aggregate votes
     for vote_entry in votes:
         voter_name = vote_entry["voter"]
         for book_index, points in vote_entry["votes"]:
@@ -251,21 +249,17 @@ elif page == "Results":
                 book_scores[book["title"]] += points
                 book_voters[book["title"]].append({"voter": voter_name, "points": points})
 
-    # 3️⃣ Merge totals into books
     for book in books:
         book["total_points"] = book_scores.get(book["title"], 0)
         book["voters"] = book_voters.get(book["title"], [])
 
-    # 4️⃣ Separate voted vs. unvoted books
     voted_books = [b for b in books if b["total_points"] > 0]
     unvoted_books = [b for b in books if b["total_points"] == 0]
 
-    # 5️⃣ Sort voted books by total points (descending)
     ranked_books = sorted(voted_books, key=lambda b: b["total_points"], reverse=True)
 
     st.header("📊 Results Overview")
 
-    # 6️⃣ "Received No Votes" section
     if unvoted_books:
         with st.expander("Received No Votes"):
             cols = st.columns(4)
@@ -289,52 +283,71 @@ elif page == "Results":
                             </div>
                         """, unsafe_allow_html=True)
 
-    # 7️⃣ Ranked books (lowest → highest)
     for idx, book in enumerate(reversed(ranked_books), start=1):  # lowest first
         rank = len(ranked_books) - idx + 1  # actual rank
         is_top6 = rank <= 6
+
         border_color = "#FFD700" if is_top6 else "#ddd"
         bg_color = "#fff9e6" if is_top6 else "white"
 
         with st.expander(f"#{rank}"):
-            st.markdown(f"""
+            col1, col2 = st.columns([1, 2])
+
+            with col1: 
+            #st.markdown(f"""
+                #<div style="
+                    #border: 3px solid {border_color};
+                    #border-radius: 12px;
+                    #padding: 20px;
+                    #background-color: {bg_color};
+                    #margin-bottom: 10px;
+                #">
+                    #<h3 style="margin-bottom: 5px;">#{rank} – {book['title']}</h3>
+                    #<p><b>Author:</b> {book['author']}</p>
+                    #<p><b>Submitted by:</b> {book['submitter']}</p>
+                    #<p><b>Total Points:</b> {book['total_points']}</p>
+            #""", unsafe_allow_html=True)
+
+                cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                if os.path.exists(cover_path):
+                    st.image(cover_path, width=200)
+                else:
+                    st.markdown(f"""
+                        <div style="
+                            background-color: white;
+                            border: 1px solid #ddd;
+                            padding: 20px;
+                            text-align: center;
+                            width: 200px;
+                            margin-bottom: 10px;
+                        ">
+                            <p style="font-weight: bold;">{book['title']}</p>
+                            <p style="color: #666;">{book['author']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            with col2: 
+                st.markdown(f"""
                 <div style="
                     border: 3px solid {border_color};
                     border-radius: 12px;
                     padding: 20px;
                     background-color: {bg_color};
-                    margin-bottom: 10px;
                 ">
                     <h3 style="margin-bottom: 5px;">#{rank} – {book['title']}</h3>
                     <p><b>Author:</b> {book['author']}</p>
                     <p><b>Submitted by:</b> {book['submitter']}</p>
                     <p><b>Total Points:</b> {book['total_points']}</p>
+                    <hr>
+                    <h4>🗳️ Votes Received:</h4>
             """, unsafe_allow_html=True)
 
-            cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
-            if os.path.exists(cover_path):
-                st.image(cover_path, width=200)
-            else:
-                st.markdown(f"""
-                    <div style="
-                        background-color: white;
-                        border: 1px solid #ddd;
-                        padding: 20px;
-                        text-align: center;
-                        width: 200px;
-                        margin-bottom: 10px;
-                    ">
-                        <p style="font-weight: bold;">{book['title']}</p>
-                        <p style="color: #666;">{book['author']}</p>
-                    </div>
-                """, unsafe_allow_html=True)
-
-            st.write("### 🗳️ Votes Received:")
-            if book["voters"]:
-                for v in sorted(book["voters"], key=lambda x: x["points"], reverse=True):
-                    st.write(f"- {v['voter']} gave **{v['points']} points**")
-            else:
-                st.write("_No votes yet_")
+                st.write("### 🗳️ Votes Received:")
+                if book["voters"]:
+                    for v in sorted(book["voters"], key=lambda x: x["points"], reverse=True):
+                        st.write(f"- {v['voter']} gave **{v['points']} points**")
+                else:
+                    st.write("_No votes yet_")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
