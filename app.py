@@ -309,28 +309,28 @@ elif page == "Results":
             #""", unsafe_allow_html=True)
 
                 cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
-                if os.path.exists(cover_path):
-                    st.image(cover_path, width=200)
-                else:
-                    st.markdown(f"""
-                        <div style="
-                            background-color: white;
-                            border: 1px solid #ddd;
-                            padding: 20px;
-                            text-align: center;
-                            width: 200px;
-                            margin-bottom: 10px;
-                        ">
-                            <p style="font-weight: bold;">{book['title']}</p>
-                            <p style="color: #666;">{book['author']}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
+                #if os.path.exists(cover_path):
+                st.image(cover_path, width=200)
+                #else:
+                    #st.markdown(f"""
+                        #<div style="
+                            #background-color: white;
+                            #border: 1px solid #ddd;
+                            #padding: 20px;
+                            #text-align: center;
+                            #width: 200px;
+                            #margin-bottom: 10px;
+                        #">
+                            #<p style="font-weight: bold;">{book['title']}</p>
+                            #<p style="color: #666;">{book['author']}</p>
+                        #</div>
+                    #""", unsafe_allow_html=True)
 
             with col2: 
                 st.markdown(f"""
                 <div style="
                     border: 3px solid {border_color};
-                    border-radius: 12px;
+                    #border-radius: 12px;
                     padding: 20px;
                     background-color: {bg_color};
                 ">
@@ -339,7 +339,6 @@ elif page == "Results":
                     <p><b>Submitted by:</b> {book['submitter']}</p>
                     <p><b>Total Points:</b> {book['total_points']}</p>
                     <hr>
-                    <h4>🗳️ Votes Received:</h4>
             """, unsafe_allow_html=True)
 
                 st.write("### 🗳️ Votes Received:")
