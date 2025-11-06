@@ -288,7 +288,7 @@ elif page == "Results":
         is_top6 = rank <= 6
         bg_color = "#fff9e6" if is_top6 else "white"
 
-        with st.expander(f"#{rank} – {book['title']} ({book['total_points']} pts)"):
+        with st.expander(f"#{rank}"):
             col1, col2 = st.columns([1, 2])
 
             with col1:
