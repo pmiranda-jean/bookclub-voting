@@ -420,8 +420,7 @@ elif page == "Results":
 
     for idx, book in enumerate(reversed(ranked_books), start=1):  # lowest first
         rank = len(ranked_books) - idx + 1  # actual rank
-        is_top6 = rank <= 6
-        bg_color = "#fff9e6" if is_top6 else "white"
+        bg_color = "white"
 
         with st.expander(f"#{rank}"):
             col1, col2 = st.columns([1, 2])
