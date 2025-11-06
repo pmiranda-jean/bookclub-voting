@@ -286,69 +286,47 @@ elif page == "Results":
     for idx, book in enumerate(reversed(ranked_books), start=1):  # lowest first
         rank = len(ranked_books) - idx + 1  # actual rank
         is_top6 = rank <= 6
-
-        border_color = "#FFD700" if is_top6 else "#ddd"
         bg_color = "#fff9e6" if is_top6 else "white"
 
-        with st.expander(f"#{rank}"):
+        with st.expander(f"#{rank} – {book['title']} ({book['total_points']} pts)"):
             col1, col2 = st.columns([1, 2])
 
-            with col1: 
-            #st.markdown(f"""
-                #<div style="
-                    #border: 3px solid {border_color};
-                    #border-radius: 12px;
-                    #padding: 20px;
-                    #background-color: {bg_color};
-                    #margin-bottom: 10px;
-                #">
-                    #<h3 style="margin-bottom: 5px;">#{rank} – {book['title']}</h3>
-                    #<p><b>Author:</b> {book['author']}</p>
-                    #<p><b>Submitted by:</b> {book['submitter']}</p>
-                    #<p><b>Total Points:</b> {book['total_points']}</p>
-            #""", unsafe_allow_html=True)
-
+            with col1:
                 cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
-                #if os.path.exists(cover_path):
-                st.image(cover_path, width=200)
-                #else:
-                    #st.markdown(f"""
-                        #<div style="
-                            #background-color: white;
-                            #border: 1px solid #ddd;
-                            #padding: 20px;
-                            #text-align: center;
-                            #width: 200px;
-                            #margin-bottom: 10px;
-                        #">
-                            #<p style="font-weight: bold;">{book['title']}</p>
-                            #<p style="color: #666;">{book['author']}</p>
-                        #</div>
-                    #""", unsafe_allow_html=True)
+                if os.path.exists(cover_path):
+                    st.image(cover_path, use_container_width=True)
+                else:
+                    st.markdown(f"""
+                        <div style="
+                            background-color: white;
+                            border: 1px solid #ddd;
+                            padding: 20px;
+                            text-align: center;
+                            border-radius: 10px;
+                        ">
+                            <p style="font-weight: bold;">{book['title']}</p>
+                            <p style="color: #666;">{book['author']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-            with col2: 
+            with col2:
                 st.markdown(f"""
-                <div style="
-                    border: 3px solid {border_color};
-                    #border-radius: 12px;
-                    padding: 20px;
-                    background-color: {bg_color};
-                ">
-                    <h3 style="margin-bottom: 5px;">#{rank} – {book['title']}</h3>
-                    <p><b>Author:</b> {book['author']}</p>
-                    <p><b>Submitted by:</b> {book['submitter']}</p>
-                    <p><b>Total Points:</b> {book['total_points']}</p>
-                    <hr>
-            """, unsafe_allow_html=True)
+                    <div style="background-color: {bg_color}; padding: 10px 0;">
+                        <h3 style="margin-bottom: 5px;">#{rank} – {book['title']}</h3>
+                        <p><b>Author:</b> {book['author']}</p>
+                        <p><b>Submitted by:</b> {book['submitter']}</p>
+                        <p><b>Total Points:</b> {book['total_points']}</p>
+                        <h4> Votes Received:</h4>
+                """, unsafe_allow_html=True)
 
-                st.write("### 🗳️ Votes Received:")
                 if book["voters"]:
                     for v in sorted(book["voters"], key=lambda x: x["points"], reverse=True):
-                        st.write(f"- {v['voter']} gave **{v['points']} points**")
+                        st.markdown(f"- {v['voter']} gave **{v['points']} points**")
                 else:
-                    st.write("_No votes yet_")
+                    st.markdown("_No votes yet_")
 
-            st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+
 
     # 8️⃣ Fun Stats
     st.divider()
