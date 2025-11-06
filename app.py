@@ -264,7 +264,6 @@ elif page == "Results":
     ranked_books = sorted(voted_books, key=lambda b: b["total_points"], reverse=True)
 
     st.header("📊 Results Overview")
-    st.write(f"- **{len(unvoted_books)}** books received no votes,")
 
     # 6️⃣ "Received No Votes" section
     if unvoted_books:
@@ -290,55 +289,64 @@ elif page == "Results":
                             </div>
                         """, unsafe_allow_html=True)
 
-    # 7️⃣ Ranked books (lowest → highest)
+    #Ranked books (lowest → highest)
     for idx, book in enumerate(reversed(ranked_books), start=1):  # lowest first
         rank = len(ranked_books) - idx + 1  # actual rank
         is_top6 = rank <= 6
-        border_color = "#FFD700" if is_top6 else "#ddd"
-        bg_color = "#fff9e6" if is_top6 else "white"
 
-        with st.expander(f"#{rank}"):
-            st.markdown(f"""
-                <div style="
-                    border: 3px solid {border_color};
-                    border-radius: 12px;
-                    padding: 20px;
-                    background-color: {bg_color};
-                    margin-bottom: 10px;
-                ">
-                    <h3 style="margin-bottom: 5px;">#{rank} – {book['title']}</h3>
-                    <p><b>Author:</b> {book['author']}</p>
-                    <p><b>Submitted by:</b> {book['submitter']}</p>
-                    <p><b>Total Points:</b> {book['total_points']}</p>
-            """, unsafe_allow_html=True)
+    # Gold header for top 6
+        expander_label = (
+            f"🏆 #{rank} — {book['title']} ({book['total_points']} pts)"
+            if is_top6 else
+            f"#{rank} — {book['title']} ({book['total_points']} pts)"
+        )
 
-            cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
-            if os.path.exists(cover_path):
-                st.image(cover_path, width=200)
-            else:
-                st.markdown(f"""
-                    <div style="
-                        background-color: white;
-                        border: 1px solid #ddd;
-                        padding: 20px;
-                        text-align: center;
-                        width: 200px;
-                        margin-bottom: 10px;
-                    ">
-                        <p style="font-weight: bold;">{book['title']}</p>
-                        <p style="color: #666;">{book['author']}</p>
-                    </div>
-                """, unsafe_allow_html=True)
+        # Use colored header via HTML styling hack (Streamlit supports minimal HTML tags inside expander titles)
+        expander_label = f"""
+        <div style="background-color: {'#FFD700' if is_top6 else '#f0f0f0'};
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-weight: bold;
+                color: {'black' if is_top6 else '#333'};">
+            {expander_label}
+        </div>
+        """
 
-            st.write("### 🗳️ Votes Received:")
-            if book["voters"]:
-                for v in sorted(book["voters"], key=lambda x: x["points"], reverse=True):
-                    st.write(f"- {v['voter']} gave **{v['points']} points**")
-            else:
-                st.write("_No votes yet_")
+        with st.expander(expander_label, expanded=False):
+            # Two-column layout: cover (left), info (right)
+            col1, col2 = st.columns([1, 2])
+        
+            with col1:
+                cover_path = f"covers/{book['title'].replace(' ', '_')}.jpg"
+                if os.path.exists(cover_path):
+                    st.image(cover_path, use_container_width=True)
+                else:
+                    st.markdown(f"""
+                        <div style="
+                            background-color: white;
+                            border: 1px solid #ddd;
+                            padding: 20px;
+                            text-align: center;
+                            border-radius: 10px;
+                        ">
+                            <p style="font-weight: bold;">{book['title']}</p>
+                            <p style="color: #666;">{book['author']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-            st.markdown("</div>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"### {book['title']}")
+                st.markdown(f"**Author:** {book['author']}")
+                st.markdown(f"**Submitted by:** {book['submitter']}")
+                st.markdown(f"**Total Points:** {book['total_points']}")
 
+                st.markdown("---")
+                st.markdown("#### 🗳️ Votes Received:")
+                if book["voters"]:
+                    for v in sorted(book["voters"], key=lambda x: x["points"], reverse=True):
+                        st.markdown(f"- {v['voter']} gave **{v['points']} points**")
+                else:
+                    st.markdown("_No votes yet_")
     # 8️⃣ Fun Stats
     st.divider()
     st.header("🎉 Fun Stats")
