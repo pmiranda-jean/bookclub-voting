@@ -17,7 +17,3 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
-
-# Local data (we'll use GitHub for data persistence in cloud)
-# Remove these lines if you want to track data files
-#data/*.json
