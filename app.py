@@ -264,22 +264,6 @@ elif page == "Time to Vote!!":
         
         # Display books in 5-column grid
         st.header("📚 Cast Your Votes")
-
-        # Track current point allocation before form submission
-        current_alloc = 0
-        for key in st.session_state:
-            if key.startswith("vote_select_"):
-                current_alloc += st.session_state[key]
-
-        st.markdown(
-            f"""
-            <div style="padding: 12px; background:#f0f8ff; border-left:5px solid #0066cc; border-radius:4px; margin-bottom:10px;">
-            <strong>You have {TOTAL_POINTS - current_alloc} points left to allocate</strong>
-            <br>(Maximum: {TOTAL_POINTS} points)
-            </div>
-            """,
-        unsafe_allow_html=True
-        )
         
         # Use a form to batch all inputs together
         with st.form("voting_grid_form"):
