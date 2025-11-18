@@ -279,7 +279,7 @@ elif page == "Time to Vote!!":
                     book_idx_in_list = row_start + col_idx
                     
                     if book_idx_in_list < num_books:
-                        original_idx, book = available_books[book_idx_in_list]
+                        orig_idx, book = available_books[book_idx_in_list]
                         
                         with col:
                             # Display cover
