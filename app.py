@@ -246,14 +246,14 @@ elif page == "Time to Vote!!":
             st.stop()
 
         sorted_books = sorted(
-            st.session_state.books, 
-            key=lambda book: (book["author"].split(" ",1)[1])
+            list(enumerate(st.session_state.books)), 
+            key=lambda pair: pair[1]["author"].split(" ", 1)[1]
         )
-        
-        # Filter out user's own submissions
+
         available_books = [
-            (idx, book) for idx, book in enumerate(sorted_books)
-            if book['submitter'] != voter_name
+            (orig_idx, book)
+            for orig_idx, book in sorted_books
+            if book["submitter"] != voter_name
         ]
         
         if not available_books:
@@ -317,11 +317,11 @@ elif page == "Time to Vote!!":
                                 "Points",
                                 options=list(range(0, 51)),
                                 index=0,
-                                key=f"vote_select_{original_idx}",
+                                key=f"vote_select_{orig_idx}",
                                 label_visibility="collapsed"
                             )
                             
-                            vote_points[original_idx] = points
+                            vote_points[orig_idx] = points
             
             st.divider()
             
