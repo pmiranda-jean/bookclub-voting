@@ -377,7 +377,7 @@ elif page == "Results":
     voted_books = [b for b in books if b["total_points"] > 0]
     unvoted_books = [b for b in books if b["total_points"] == 0]
 
-    ranked_books = sorted(voted_books, key=lambda b: b["total_points"], reverse=False)
+    ranked_books = sorted(voted_books, key=lambda b: b["total_points"], reverse=True)
 
     st.header("📊 Results Overview")
 
