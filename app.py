@@ -340,7 +340,8 @@ elif page == "Time to Vote!!":
                 else:
                     # Get books with points > 0
                     votes_to_submit = [
-                        (idx, points) for idx, points in vote_points.items()
+                        (books[idx]["title"], points)
+                        for idx, points in vote_points.items()
                         if points > 0
                     ]
                     
@@ -377,7 +378,7 @@ elif page == "Results":
         voter_name = vote_entry["voter"]
         for book_index, points in vote_entry["votes"]:
             if 0 <= book_index < len(books):
-                book = books[book_index]
+                book = next(b for b in books if b["title"] == book_title)
                 book_scores[book["title"]] += points
                 book_voters[book["title"]].append({"voter": voter_name, "points": points})
 
@@ -479,7 +480,7 @@ elif page == "Results":
         voter = vote_entry["voter"]
         count_top6 = sum(
             1 for (book_index, _) in vote_entry["votes"]
-            if books[book_index]["title"] in top6_titles
+            if book_title in top6_titles
         )
         if count_top6 > 0:
             voter_counts[voter] = count_top6
