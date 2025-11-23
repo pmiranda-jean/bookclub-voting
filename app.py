@@ -80,7 +80,7 @@ is_admin = st.session_state.current_user == "Phil"
 if is_admin:
     page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!!", "Results"])
 else:
-    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!!"])
+    page = st.sidebar.radio("📍 Navigation", ["Submit Books", "View Books", "Time to Vote!!!"])
     #st.sidebar.info("📌 You are on the Submit Books page")
 
 # ==================== PAGE 1: SUBMIT BOOKS ====================
@@ -224,7 +224,7 @@ elif page == "View Books":
                 
                 st.divider()
 # ==================== PAGE 3: Time to Vote ==================== 
-elif page == "Time to Vote!!": 
+elif page == "Time to Vote!!!": 
     
     st.markdown('<p class="main-header">🗳️ Time to Vote!</p>', unsafe_allow_html=True) 
 
