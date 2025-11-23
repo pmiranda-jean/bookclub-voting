@@ -406,8 +406,8 @@ elif page == "Results":
                         """, unsafe_allow_html=True)
 
     # Ranked results
-    for rank, book in enumerate(ranked_books, start=1):
-        with st.expander(f"#{rank} – {book['title']}"):
+    for rank, book in enumerate(reversed(ranked_books), start=1):
+        with st.expander(f"#{rank}"):
             col1, col2 = st.columns([1, 2])
 
             with col1:
